@@ -1,0 +1,434 @@
+// Spin Draw — data model (spec §10).
+// Money lives only in ledger_entries; wallets cache the running balance and are
+// updated in the same transaction as each ledger entry (see WalletService).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// REQ-ROLE-03: finer roles are modelled now; v1 only grants permissions to ADMIN.
+enum Role {
+  PLAYER
+  ADMIN
+  SUPPORT
+  FINANCE
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum Language {
+  en
+  am
+}
+
+enum OtpPurpose {
+  REGISTER
+  RESET
+  ADMIN_2FA
+}
+
+enum WalletKind {
+  PLAYER
+  HOUSE
+}
+
+enum LedgerType {
+  DEPOSIT
+  STAKE
+  REFUND
+  PRIZE
+  COMMISSION
+  WITHDRAWAL
+  WITHDRAWAL_REVERSAL
+  ADMIN_ADJUSTMENT
+}
+
+enum Provider {
+  TELEBIRR
+  CBE
+}
+
+enum DepositStatus {
+  VERIFYING
+  CREDITED
+  UNDER_REVIEW
+  REJECTED
+}
+
+enum WithdrawalStatus {
+  PENDING
+  FROZEN
+  PAID
+  REJECTED
+}
+
+enum GameStatus {
+  OPEN
+  DRAWING
+  SETTLED
+  CANCELLED
+}
+
+enum FlagSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum FlagStatus {
+  OPEN
+  RESOLVED
+}
+
+enum FlagSubject {
+  DEPOSIT
+  USER
+  WITHDRAWAL
+}
+
+model User {
+  id                String     @id @default(uuid())
+  fullName          String
+  phone             String     @unique
+  passwordHash      String
+  role              Role       @default(PLAYER)
+  status            UserStatus @default(PENDING)
+  language          Language   @default(en)
+  failedLogins      Int        @default(0)
+  lockedUntil       DateTime?
+  passwordChangedAt DateTime?
+  banReason         String?
+  bannedUntil       DateTime?
+  disabled          Boolean    @default(false) // admin accounts can be disabled
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  wallet        Wallet?
+  sessions      Session[]
+  deposits      Deposit[]
+  withdrawals   Withdrawal[]
+  entries       GameEntry[]
+  bans          Ban[]          @relation("BanUser")
+  notifications Notification[]
+  loginEvents   LoginEvent[]
+
+  @@index([status])
+  @@map("users")
+}
+
+model OtpCode {
+  id        String     @id @default(uuid())
+  phone     String
+  codeHash  String
+  purpose   OtpPurpose
+  ip        String?
+  expiresAt DateTime
+  attempts  Int        @default(0)
+  usedAt    DateTime?
+  voidedAt  DateTime?
+  createdAt DateTime   @default(now())
+
+  @@index([phone, purpose])
+  @@index([ip, createdAt])
+  @@map("otp_codes")
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenHash String    @unique
+  device           String?
+  fingerprint      String?
+  ip               String?
+  twoFactor        Boolean   @default(false)
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([userId])
+  @@index([fingerprint])
+  @@map("sessions")
+}
+
+model LoginEvent {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  success     Boolean
+  ip          String?
+  device      String?
+  fingerprint String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([ip])
+  @@map("login_events")
+}
+
+model Wallet {
+  id           String        @id @default(uuid())
+  userId       String?       @unique
+  user         User?         @relation(fields: [userId], references: [id])
+  kind         WalletKind    @default(PLAYER)
+  balanceCents BigInt        @default(0)
+  lockedCents  BigInt        @default(0)
+  createdAt    DateTime      @default(now())
+  entries      LedgerEntry[]
+
+  @@map("wallets")
+}
+
+model LedgerEntry {
+  id          String     @id @default(uuid())
+  walletId    String
+  wallet      Wallet     @relation(fields: [walletId], references: [id])
+  type        LedgerType
+  amountCents BigInt
+  refType     String
+  refId       String
+  note        String?
+  createdBy   String?
+  createdAt   DateTime   @default(now())
+
+  @@index([walletId, createdAt])
+  @@index([refType, refId])
+  @@map("ledger_entries")
+}
+
+model Deposit {
+  id                 String        @id @default(uuid())
+  userId             String
+  user               User          @relation(fields: [userId], references: [id])
+  provider           Provider
+  claimedAmountCents Int
+  creditedCents      Int?
+  reference          String?
+  referenceInput     String? // what the user pasted, if anything
+  senderAccountHint  String? // optional: last digits of sender's CBE account
+  imageKey           String?
+  rawReceiptKey      String?
+  parsedJson         Json?
+  status             DepositStatus @default(VERIFYING)
+  flagReasons        String[]      @default([])
+  highestSeverity    FlagSeverity?
+  attempts           Int           @default(0)
+  reviewedBy         String?
+  reviewedAt         DateTime?
+  reviewNote         String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([provider, reference])
+  @@map("deposits")
+}
+
+// A receipt reference can be credited exactly once (spec §10: "(provider, reference) unique").
+// Kept in its own table so duplicate attempts can still be stored as deposits for review.
+model UsedReference {
+  provider  Provider
+  reference String
+  depositId String   @unique
+  createdAt DateTime @default(now())
+
+  @@id([provider, reference])
+  @@map("used_references")
+}
+
+model Withdrawal {
+  id           String           @id @default(uuid())
+  userId       String
+  user         User             @relation(fields: [userId], references: [id])
+  amountCents  Int
+  method       Provider
+  destAccount  String
+  destName     String
+  status       WithdrawalStatus @default(PENDING)
+  gameId       String? // set when created by "Pay winner now"
+  transferRef  String?
+  receiptKey   String?
+  rejectReason String?
+  paidBy       String?
+  paidAt       DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([status, createdAt])
+  @@index([destAccount])
+  @@map("withdrawals")
+}
+
+model RoomTemplate {
+  id              String   @id @default(uuid())
+  name            String?
+  stakeCents      Int
+  capacity        Int
+  minPlayers      Int      @default(2)
+  commissionBps   Int      @default(2000)
+  deadlineMinutes Int?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  games           Game[]
+
+  @@map("room_templates")
+}
+
+model Game {
+  id            String       @id @default(uuid())
+  templateId    String?
+  template      RoomTemplate? @relation(fields: [templateId], references: [id])
+  stakeCents    Int
+  capacity      Int
+  minPlayers    Int          @default(2)
+  commissionBps Int          @default(2000)
+  status        GameStatus   @default(OPEN)
+  deadlineAt    DateTime?
+  seedHash      String
+  seed          String // secret until drawn; never returned by the API before then
+  winningNumber Int?
+  winnerUserId  String?
+  winnerIndex   Int?
+  potCents      Int?
+  prizeCents    Int?
+  commissionCents Int?
+  spinStartAt   DateTime?
+  cancelReason  String?
+  openedAt      DateTime     @default(now())
+  drawnAt       DateTime?
+  entries       GameEntry[]
+
+  @@index([status])
+  @@map("games")
+}
+
+model GameEntry {
+  id        String   @id @default(uuid())
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  number    Int
+  createdAt DateTime @default(now())
+
+  @@unique([gameId, number])
+  @@unique([gameId, userId])
+  @@index([userId])
+  @@map("game_entries")
+}
+
+model Flag {
+  id             String       @id @default(uuid())
+  subjectType    FlagSubject
+  subjectId      String
+  userId         String?
+  severity       FlagSeverity
+  reason         String
+  status         FlagStatus   @default(OPEN)
+  resolvedBy     String?
+  resolutionNote String?
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+
+  @@index([status, severity])
+  @@index([userId, createdAt])
+  @@index([subjectType, subjectId])
+  @@map("flags")
+}
+
+model Ban {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation("BanUser", fields: [userId], references: [id])
+  reason      String
+  until       DateTime?
+  bannedBy    String
+  liftedBy    String?
+  liftedAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@map("bans")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String?
+  before     Json?
+  after      Json?
+  reason     String
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@map("audit_log")
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("settings")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model IdempotencyKey {
+  userId     String
+  key        String
+  route      String
+  statusCode Int
+  response   Json
+  createdAt  DateTime @default(now())
+
+  @@id([userId, key])
+  @@map("idempotency_keys")
+}
+
+model Reconciliation {
+  id              String   @id @default(uuid())
+  date            String // YYYY-MM-DD
+  telebirrCents   BigInt
+  cbeCents        BigInt
+  walletsCents    BigInt
+  lockedCents     BigInt
+  houseCents      BigInt
+  differenceCents BigInt
+  enteredBy       String
+  note            String?
+  createdAt       DateTime @default(now())
+
+  @@index([date])
+  @@map("reconciliations")
+}

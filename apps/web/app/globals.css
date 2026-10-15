@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body { background: #0b0f17; color: #e5e7eb; }
+body { -webkit-tap-highlight-color: transparent; }
+
+@layer components {
+  .card { @apply rounded-2xl border border-ink-700 bg-ink-900 p-4; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-gold-400 text-ink-950 hover:bg-gold-300; }
+  .btn-secondary { @apply btn border border-ink-600 bg-ink-800 text-gray-100 hover:bg-ink-700; }
+  .btn-danger { @apply btn bg-red-600 text-white hover:bg-red-500; }
+  .btn-sm { @apply px-3 py-1.5 text-sm; }
+  .input { @apply w-full rounded-xl border border-ink-600 bg-ink-800 px-3 py-2.5 text-gray-100 placeholder-gray-500 outline-none focus:border-gold-400; }
+  .label { @apply mb-1 block text-sm text-gray-400; }
+  .badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium; }
+  .table { @apply w-full text-left text-sm; }
+  .table th { @apply border-b border-ink-700 px-3 py-2 font-medium text-gray-400; }
+  .table td { @apply border-b border-ink-800 px-3 py-2 align-top; }
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
