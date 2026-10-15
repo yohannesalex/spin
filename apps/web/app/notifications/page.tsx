@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { dateTime } from '@/lib/format';
 import { useApi } from '@/lib/hooks';
 import { useI18n } from '@/lib/i18n';
+import { serverText } from '@/lib/locale';
 
 interface N { id: string; title: string; body: string; readAt: string | null; createdAt: string }
 
@@ -16,16 +17,16 @@ function List() {
     if (data?.unread) api('/notifications/read-all', { method: 'POST' }).catch(() => {});
   }, [data]);
   if (loading) return <Spinner />;
-  if (!data?.items.length) return <p className="text-gray-500">{t('common.noNotifications')}</p>;
+  if (!data?.items.length) return <p className="text-slate-500">{t('common.noNotifications')}</p>;
   return (
     <ul className="space-y-2">
       {data.items.map((n) => (
         <li key={n.id} className={`card ${!n.readAt ? 'border-gold-400/50' : ''}`}>
           <div className="flex justify-between gap-2">
-            <b>{n.title}</b>
-            <span className="shrink-0 text-xs text-gray-500">{dateTime(n.createdAt)}</span>
+            <b>{serverText(n.title)}</b>
+            <span className="shrink-0 text-xs text-slate-500">{dateTime(n.createdAt)}</span>
           </div>
-          <p className="mt-1 text-sm text-gray-300">{n.body}</p>
+          <p className="mt-1 text-sm text-slate-700">{serverText(n.body)}</p>
         </li>
       ))}
     </ul>

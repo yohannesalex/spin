@@ -16,17 +16,17 @@ function GamesInner() {
     <main className="mx-auto max-w-3xl px-4 py-6">
       <h1 className="mb-4 text-2xl font-bold">{t('games.title')}</h1>
       {data.length === 0 ? (
-        <p className="text-gray-500">{t('games.empty')}</p>
+        <p className="text-slate-500">{t('games.empty')}</p>
       ) : (
         <ul className="space-y-2">
           {data.map((g) => (
             <li key={g.gameId}>
-              <Link href={`/room/${g.gameId}`} className="card flex items-center justify-between gap-2 hover:border-ink-600">
+              <Link href={`/room/${g.gameId}`} className="card flex items-center justify-between gap-2 hover:border-slate-300">
                 <div>
                   <div className="font-semibold">#{g.number} · {birr(g.stakeCents)}</div>
-                  <div className="text-xs text-gray-500">{dateTime(g.drawnAt ?? g.joinedAt)}{g.winningNumber != null && ` · ${t('room.numberWon', { number: g.winningNumber })}`}</div>
+                  <div className="text-xs text-slate-500">{dateTime(g.drawnAt ?? g.joinedAt)}{g.winningNumber != null && ` · ${t('room.numberWon', { number: g.winningNumber })}`}</div>
                 </div>
-                <span className={`font-semibold ${g.won ? 'text-gold-400' : 'text-gray-400'}`}>
+                <span className={`font-semibold ${g.won ? 'text-gold-700' : 'text-slate-600'}`}>
                   {g.status === 'OPEN' ? t('games.open') : g.status === 'CANCELLED' ? t('games.refunded') : g.won ? `${t('games.won')} ${birr(g.prizeCents)}` : t('games.lost')}
                 </span>
               </Link>

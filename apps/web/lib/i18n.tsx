@@ -1,5 +1,7 @@
 'use client';
+import { usePathname } from 'next/navigation';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { Lang, setCurrentLang } from './locale';
 
 // REQ-UX-02: English and Amharic, switchable at any time.
 // Amharic strings should be reviewed by a native speaker before launch (M5).
@@ -139,11 +141,102 @@ const en = {
   'common.markAllRead': 'Mark all read',
   'common.noNotifications': 'No notifications.',
   'common.maintenance': 'The platform is under maintenance. Games and payments are paused.',
+  'common.birr': 'birr',
+  'common.copy': 'Copy',
+  'common.copied': 'Copied',
+  'common.menu': 'Menu',
+
+  'nav.adminPortal': 'Admin portal',
+  'home.example': '10 × 200 birr = 2,000 birr pot → {amount} to the winner.',
+  'room.wheel': 'Spinning wheel',
+  'room.reel': 'Number reel',
+
+  'rules.p1': 'Every room has a fixed stake. You pay it from your wallet to take one number from 1 to 100. Each number can be taken by only one player, and you get one number per room.',
+  'rules.p2': 'A room draws automatically when it is full. If it has a deadline, it draws with the players present once the deadline passes — as long as the minimum number of players joined. Otherwise the room is cancelled and every stake is refunded to your wallet.',
+  'rules.p3': "The winner is drawn only from the numbers players actually took, so every game has exactly one winner. With n players, each player's chance is 1 in n.",
+  'rules.p4': 'The winner receives the pot minus the house commission (default 20%). Prizes are rounded down to the nearest santim.',
+  'rules.p5': "Draws are provably fair: before anyone joins, we publish the SHA-256 hash of a secret seed. After the draw we reveal the seed, and anyone can recompute the result on the game's Verify page.",
+  'rules.p6': 'Once you pay for a number you cannot leave the room, except when it is cancelled and refunded.',
+  'rules.p7': 'You must be 18 or older to play. Please play responsibly.',
+  'rules.current': 'Current rooms',
+  'rules.commission': 'Commission',
+  'rules.odds': 'Odds per player',
+  'rules.oddsValue': '1 in {full} (full) · 1 in {min} (minimum)',
+
+  'verify.notDrawn': "This game has not been drawn yet. The seed hash below is the server's commitment; the seed is revealed after the draw.",
+  'verify.ok': '✔ Verified in your browser: the seed matches the published hash and produces number {number}.',
+  'verify.failed': '✘ Verification failed — the result does not match.',
+  'verify.game': 'Game',
+  'verify.seedHash': 'Seed hash (published at open)',
+  'verify.seed': 'Revealed seed',
+  'verify.hidden': 'hidden until the draw',
+  'verify.entries': 'Entries ({count}, sorted)',
+  'verify.winning': 'Winning number',
+  'verify.split': 'Pot / prize / commission',
+  'verify.drawnAt': 'Drawn at',
+  'verify.how': 'How it was computed',
+  'verify.matches': '✔ matches',
+  'verify.differs': '✘ differs',
+  'verify.sha': 'SHA-256(seed)',
+  'verify.message': 'message = game ID + ":" + sorted numbers',
+  'verify.hmac': 'HMAC-SHA256(key = seed, message)',
+  'verify.index': 'index = that value as an integer mod {n}',
+  'verify.winner': 'winner = sorted numbers[{i}]',
+  'verify.explain': 'The seed was fixed (and its hash published) before anyone joined, so neither the house nor any player could steer the result.',
+  'verify.back': 'Back to room',
+
+  'deposit.cbe': 'CBE Mobile Banking',
+  'deposit.fileHint': 'JPG or PNG, up to 5 MB',
+  'deposit.chooseFile': 'Choose image',
+  'deposit.noFile': 'No image chosen',
+  'deposit.needReceipt': 'Upload the receipt or paste its link / reference',
+
+  'withdraw.min': 'Min {amount}',
+  'withdraw.holdInfo': 'Deposits become withdrawable {hours} hours after they are credited. Winnings can be withdrawn right away.',
+  'withdraw.ref': 'Ref {ref}',
+
+  'wallet.game': 'game',
+
+  'auth.forgotSent': 'If an account exists for this number, we sent a code.',
+  'auth.adminsCannotPlay': 'Admins cannot play. Use the admin portal.',
+  'auth.suspended': 'Your account is suspended pending review. Playing, deposits and withdrawals are paused.',
+
+  'provider.TELEBIRR': 'Telebirr',
+  'provider.CBE': 'CBE',
+
+  'ledger.DEPOSIT': 'Deposit',
+  'ledger.STAKE': 'Stake',
+  'ledger.REFUND': 'Refund',
+  'ledger.PRIZE': 'Prize',
+  'ledger.COMMISSION': 'Commission',
+  'ledger.WITHDRAWAL': 'Withdrawal',
+  'ledger.WITHDRAWAL_REVERSAL': 'Withdrawal returned',
+  'ledger.ADMIN_ADJUSTMENT': 'Admin adjustment',
+
+  'status.PENDING': 'pending',
+  'status.ACTIVE': 'active',
+  'status.SUSPENDED': 'suspended',
+  'status.BANNED': 'banned',
+  'status.VERIFYING': 'verifying',
+  'status.CREDITED': 'credited',
+  'status.UNDER_REVIEW': 'under review',
+  'status.REJECTED': 'rejected',
+  'status.FROZEN': 'on hold',
+  'status.PAID': 'paid',
+  'status.OPEN': 'open',
+  'status.DRAWING': 'drawing',
+  'status.SETTLED': 'settled',
+  'status.CANCELLED': 'cancelled',
+  'status.RESOLVED': 'resolved',
+  'status.LOW': 'low',
+  'status.MEDIUM': 'medium',
+  'status.HIGH': 'high',
 };
 
-type Key = keyof typeof en;
+export type Key = keyof typeof en;
 
-const am: Partial<Record<Key, string>> = {
+// Complete on purpose: a key missing here is a type error, so no English slips into the Amharic UI.
+const am: Record<Key, string> = {
   'nav.lobby': 'ሎቢ',
   'nav.wallet': 'ቦርሳ',
   'nav.deposit': 'ገቢ',
@@ -279,14 +372,108 @@ const am: Partial<Record<Key, string>> = {
   'common.markAllRead': 'ሁሉንም እንደተነበበ ምልክት አድርግ',
   'common.noNotifications': 'ምንም ማሳወቂያ የለም።',
   'common.maintenance': 'መድረኩ በጥገና ላይ ነው። ጨዋታዎችና ክፍያዎች ለጊዜው ቆመዋል።',
+  'common.birr': 'ብር',
+  'common.copy': 'ቅዳ',
+  'common.copied': 'ተቀድቷል',
+  'common.menu': 'ምናሌ',
+
+  'nav.adminPortal': 'የአስተዳዳሪ መግቢያ',
+  'home.example': '10 × 200 ብር = 2,000 ብር ጠቅላላ → ለአሸናፊው {amount}።',
+  'room.wheel': 'የሚሽከረከር መንኮራኩር',
+  'room.reel': 'የሚሽከረከር የቁጥር ዝርዝር',
+
+  'rules.p1': 'እያንዳንዱ ክፍል የተወሰነ መወራረጃ አለው። ከ1 እስከ 100 አንድ ቁጥር ለመውሰድ ከቦርሳዎ ይከፍላሉ። እያንዳንዱን ቁጥር አንድ ተጫዋች ብቻ ሊወስደው ይችላል፤ በአንድ ክፍል አንድ ቁጥር ብቻ ያገኛሉ።',
+  'rules.p2': 'ክፍሉ ሲሞላ ዕጣው በራሱ ይወጣል። የጊዜ ገደብ ካለው፣ ገደቡ ሲያልፍ ዝቅተኛው የተጫዋቾች ቁጥር ከተሟላ ባሉት ተጫዋቾች ይወጣል። ካልተሟላ ክፍሉ ይሰረዛል፤ ሁሉም መወራረጃ ወደ ቦርሳዎ ይመለሳል።',
+  'rules.p3': 'አሸናፊው የሚመረጠው ተጫዋቾች በትክክል ከወሰዷቸው ቁጥሮች ብቻ ነው፤ ስለዚህ እያንዳንዱ ጨዋታ በትክክል አንድ አሸናፊ አለው። n ተጫዋቾች ካሉ የእያንዳንዱ ተጫዋች ዕድል ከn 1 ነው።',
+  'rules.p4': 'አሸናፊው ከጠቅላላው ገንዘብ የቤቱን ኮሚሽን (በነባሪ 20%) ቀንሶ ይቀበላል። ሽልማቶች ወደ ቅርብ ሳንቲም ዝቅ ብለው ይጠጋጋሉ።',
+  'rules.p5': 'ዕጣዎች ፍትሃዊነታቸው ሊረጋገጥ ይችላል፦ ማንም ከመቀላቀሉ በፊት የሚስጥር ዘር (seed) SHA-256 ሃሽ እናትማለን። ከዕጣው በኋላ ዘሩን እንገልጣለን፤ ማንኛውም ሰው በጨዋታው የማረጋገጫ ገጽ ላይ ውጤቱን እንደገና ማስላት ይችላል።',
+  'rules.p6': 'ለቁጥር ከከፈሉ በኋላ ክፍሉን መልቀቅ አይችሉም፤ ክፍሉ ተሰርዞ ገንዘቡ ሲመለስ ብቻ ካልሆነ በስተቀር።',
+  'rules.p7': 'ለመጫወት 18 ዓመት ወይም ከዚያ በላይ መሆን አለብዎት። እባክዎ በኃላፊነት ይጫወቱ።',
+  'rules.current': 'አሁን ያሉ ክፍሎች',
+  'rules.commission': 'ኮሚሽን',
+  'rules.odds': 'የአንድ ተጫዋች ዕድል',
+  'rules.oddsValue': 'ሲሞላ ከ{full} 1 · በዝቅተኛው ከ{min} 1',
+
+  'verify.notDrawn': 'የዚህ ጨዋታ ዕጣ ገና አልወጣም። ከታች ያለው የዘር ሃሽ የአገልጋዩ ቃል ኪዳን ነው፤ ዘሩ ከዕጣው በኋላ ይገለጣል።',
+  'verify.ok': '✔ በአሳሽዎ ተረጋግጧል፦ ዘሩ ከታተመው ሃሽ ጋር ይመሳሰላል፤ ቁጥር {number}ን ያስገኛል።',
+  'verify.failed': '✘ ማረጋገጫው አልተሳካም — ውጤቱ አይመሳሰልም።',
+  'verify.game': 'ጨዋታ',
+  'verify.seedHash': 'የዘር ሃሽ (ሲከፈት የታተመ)',
+  'verify.seed': 'የተገለጠው ዘር',
+  'verify.hidden': 'እስከ ዕጣው ድረስ የተደበቀ',
+  'verify.entries': 'ተሳታፊ ቁጥሮች ({count}፣ በቅደም ተከተል)',
+  'verify.winning': 'አሸናፊ ቁጥር',
+  'verify.split': 'ጠቅላላ / ሽልማት / ኮሚሽን',
+  'verify.drawnAt': 'ዕጣው የወጣበት',
+  'verify.how': 'እንዴት እንደተሰላ',
+  'verify.matches': '✔ ይመሳሰላል',
+  'verify.differs': '✘ አይመሳሰልም',
+  'verify.sha': 'SHA-256(ዘር)',
+  'verify.message': 'መልዕክት = የጨዋታ መለያ + ":" + በቅደም ተከተል ያሉ ቁጥሮች',
+  'verify.hmac': 'HMAC-SHA256(ቁልፍ = ዘር፣ መልዕክት)',
+  'verify.index': 'ማውጫ = ያ እሴት እንደ ሙሉ ቁጥር mod {n}',
+  'verify.winner': 'አሸናፊ = በቅደም ተከተል ያሉ ቁጥሮች[{i}]',
+  'verify.explain': 'ዘሩ ማንም ከመቀላቀሉ በፊት ተወስኖ ሃሹ ታትሟል፤ ስለዚህ ቤቱም ሆነ ማንኛውም ተጫዋች ውጤቱን መቀየር አይችሉም።',
+  'verify.back': 'ወደ ክፍሉ ተመለስ',
+
+  'deposit.cbe': 'CBE ሞባይል ባንኪንግ',
+  'deposit.fileHint': 'JPG ወይም PNG፣ እስከ 5 MB',
+  'deposit.chooseFile': 'ምስል ይምረጡ',
+  'deposit.noFile': 'ምንም ምስል አልተመረጠም',
+  'deposit.needReceipt': 'ደረሰኙን ይጫኑ ወይም ሊንኩን / የግብይት ቁጥሩን ይለጥፉ',
+
+  'withdraw.min': 'ዝቅተኛ {amount}',
+  'withdraw.holdInfo': 'ገቢዎች ከገቡ ከ{hours} ሰዓት በኋላ ማውጣት ይቻላል። ያሸነፉትን ገንዘብ ወዲያውኑ ማውጣት ይችላሉ።',
+  'withdraw.ref': 'ማጣቀሻ {ref}',
+
+  'wallet.game': 'ጨዋታ',
+
+  'auth.forgotSent': 'በዚህ ቁጥር መለያ ካለ ኮድ ልከናል።',
+  'auth.adminsCannotPlay': 'አስተዳዳሪዎች መጫወት አይችሉም። የአስተዳዳሪ መግቢያን ይጠቀሙ።',
+  'auth.suspended': 'መለያዎ ለግምገማ ታግዷል። መጫወት፣ ገቢና ወጪ ለጊዜው ቆመዋል።',
+
+  'provider.TELEBIRR': 'ቴሌብር',
+  'provider.CBE': 'CBE',
+
+  'ledger.DEPOSIT': 'ገቢ',
+  'ledger.STAKE': 'መወራረጃ',
+  'ledger.REFUND': 'ተመላሽ',
+  'ledger.PRIZE': 'ሽልማት',
+  'ledger.COMMISSION': 'ኮሚሽን',
+  'ledger.WITHDRAWAL': 'ወጪ',
+  'ledger.WITHDRAWAL_REVERSAL': 'የተመለሰ ወጪ',
+  'ledger.ADMIN_ADJUSTMENT': 'የአስተዳዳሪ ማስተካከያ',
+
+  'status.PENDING': 'በመጠባበቅ ላይ',
+  'status.ACTIVE': 'ንቁ',
+  'status.SUSPENDED': 'ለግምገማ ታግዷል',
+  'status.BANNED': 'ታግዷል',
+  'status.VERIFYING': 'በማረጋገጥ ላይ',
+  'status.CREDITED': 'ገብቷል',
+  'status.UNDER_REVIEW': 'በግምገማ ላይ',
+  'status.REJECTED': 'ውድቅ ሆኗል',
+  'status.FROZEN': 'ተይዟል',
+  'status.PAID': 'ተከፍሏል',
+  'status.OPEN': 'ክፍት',
+  'status.DRAWING': 'ዕጣ በማውጣት ላይ',
+  'status.SETTLED': 'ተጠናቋል',
+  'status.CANCELLED': 'ተሰርዟል',
+  'status.RESOLVED': 'ተፈቷል',
+  'status.LOW': 'ዝቅተኛ',
+  'status.MEDIUM': 'መካከለኛ',
+  'status.HIGH': 'ከፍተኛ',
 };
 
-export type Lang = 'en' | 'am';
+export type { Lang };
 type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (k: Key, params?: Record<string, string | number>) => string };
 const I18nContext = createContext<Ctx | null>(null);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('en');
+  const [chosen, setLangState] = useState<Lang>('en');
+  // The admin portal is English-only; the player's choice is kept for when they return.
+  const lang: Lang = usePathname().startsWith('/admin') ? 'en' : chosen;
+  // Set during render so amounts and server messages in this render already use the new language.
+  setCurrentLang(lang);
   useEffect(() => {
     try {
       const saved = localStorage.getItem('sd_lang');

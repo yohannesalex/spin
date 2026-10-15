@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { serverNow } from '@/lib/socket';
 
 /**
@@ -82,6 +83,7 @@ export function Spinner(props: SpinProps) {
 }
 
 function WheelCanvas({ gameId, numbers, winningNumber, myNumber, spinStartAt, durationMs, muted, onDone }: SpinProps) {
+  const { t } = useI18n();
   const ref = useRef<HTMLCanvasElement>(null);
   const tick = useTick(muted);
   const tickRef = useRef(tick);
@@ -185,11 +187,12 @@ function WheelCanvas({ gameId, numbers, winningNumber, myNumber, spinStartAt, du
     return () => cancelAnimationFrame(raf);
   }, [gameId, numbers, winningNumber, myNumber, spinStartAt, durationMs]);
 
-  return <canvas ref={ref} className="mx-auto block" aria-label="Spinning wheel" role="img" />;
+  return <canvas ref={ref} className="mx-auto block" aria-label={t('room.wheel')} role="img" />;
 }
 
 /** Vertical number reel for rooms with more than 40 entries, so labels stay readable. */
 function Reel({ gameId, numbers, winningNumber, myNumber, spinStartAt, durationMs, muted, onDone }: SpinProps) {
+  const { t } = useI18n();
   const ref = useRef<HTMLCanvasElement>(null);
   const tick = useTick(muted);
   const tickRef = useRef(tick);
@@ -261,5 +264,5 @@ function Reel({ gameId, numbers, winningNumber, myNumber, spinStartAt, durationM
     return () => cancelAnimationFrame(raf);
   }, [gameId, numbers, winningNumber, myNumber, spinStartAt, durationMs]);
 
-  return <canvas ref={ref} className="mx-auto block rounded-2xl" aria-label="Number reel" role="img" />;
+  return <canvas ref={ref} className="mx-auto block rounded-2xl" aria-label={t('room.reel')} role="img" />;
 }

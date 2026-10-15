@@ -1,0 +1,15 @@
+# Dev image shared by the api and web services in docker-compose.yml.
+# Source is bind-mounted at /app, so code changes hot-reload without rebuilding.
+FROM node:20-bookworm-slim
+
+# openssl: required by the Prisma query engine. procps: `nest start --watch` needs `ps` to restart.
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates procps \
+  && rm -rf /var/lib/apt/lists/* \
+  && npm install -g pnpm@10.13.1
+
+# Pre-create volume mount points owned by `node` so named volumes inherit that owner.
+RUN mkdir -p /app/node_modules /app/apps/api/node_modules /app/apps/web/node_modules /home/node/.pnpm-store \
+  && chown -R node:node /app /home/node/.pnpm-store
+
+USER node
+WORKDIR /app

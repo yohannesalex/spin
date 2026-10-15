@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Header } from '@/components/Header';
+import { BottomNav, Header } from '@/components/Header';
 import './globals.css';
 import { Providers } from './providers';
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   icons: { icon: '/icon.svg', apple: '/icon-192.png' },
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0b0f17' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#ffffff' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <Header />
           {children}
+          <BottomNav />
         </Providers>
       </body>
     </html>

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Spinner } from '@/components/ui';
 import { birr, dateTime } from '@/lib/format';
 import { useApi } from '@/lib/hooks';
+import { Key, useI18n } from '@/lib/i18n';
 
 interface Proof {
   gameId: string;
@@ -38,6 +39,7 @@ async function recompute(p: Proof) {
 
 export default function Verify() {
   const { id } = useParams<{ id: string }>();
+  const { t } = useI18n();
   const { data, error, loading } = useApi<Proof>(`/games/${id}/verify`);
   const [calc, setCalc] = useState<Awaited<ReturnType<typeof recompute>> | null>(null);
   useEffect(() => {
@@ -50,44 +52,44 @@ export default function Verify() {
 
   return (
     <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
-      <h1 className="text-2xl font-bold">Verify this game</h1>
+      <h1 className="text-2xl font-bold">{t('room.verify')}</h1>
       {!data.seed ? (
-        <Alert kind="info">This game has not been drawn yet. The seed hash below is the server&apos;s commitment; the seed is revealed after the draw.</Alert>
+        <Alert kind="info">{t('verify.notDrawn')}</Alert>
       ) : calc ? (
         <Alert kind={ok ? 'success' : 'error'}>
-          {ok ? `✔ Verified in your browser: the seed matches the published hash and produces number ${calc.winningNumber}.` : '✘ Verification failed — the result does not match.'}
+          {ok ? t('verify.ok', { number: calc.winningNumber }) : t('verify.failed')}
         </Alert>
       ) : null}
 
       <div className="card space-y-3 text-sm">
-        <Row k="Game" v={<code className="break-all">{data.gameId}</code>} />
-        <Row k="Status" v={data.status} />
-        <Row k="Seed hash (published at open)" v={<code className="break-all">{data.seedHash}</code>} />
-        <Row k="Revealed seed" v={<code className="break-all">{data.seed ?? 'hidden until the draw'}</code>} />
-        <Row k={`Entries (${data.numbers.length}, sorted)`} v={data.numbers.join(', ') || '—'} />
+        <Row k={t('verify.game')} v={<code className="break-all">{data.gameId}</code>} />
+        <Row k={t('common.status')} v={t(`status.${data.status}` as Key)} />
+        <Row k={t('verify.seedHash')} v={<code className="break-all">{data.seedHash}</code>} />
+        <Row k={t('verify.seed')} v={<code className="break-all">{data.seed ?? t('verify.hidden')}</code>} />
+        <Row k={t('verify.entries', { count: data.numbers.length })} v={data.numbers.join(', ') || '—'} />
         {data.winningNumber != null && (
           <>
-            <Row k="Winning number" v={<b className="text-gold-400">{data.winningNumber}</b>} />
-            <Row k="Pot / prize / commission" v={`${birr(data.potCents)} / ${birr(data.prizeCents)} / ${birr(data.commissionCents)} (${data.commissionBps / 100}%)`} />
-            <Row k="Drawn at" v={dateTime(data.drawnAt)} />
+            <Row k={t('verify.winning')} v={<b className="text-gold-700">{data.winningNumber}</b>} />
+            <Row k={t('verify.split')} v={`${birr(data.potCents)} / ${birr(data.prizeCents)} / ${birr(data.commissionCents)} (${data.commissionBps / 100}%)`} />
+            <Row k={t('verify.drawnAt')} v={dateTime(data.drawnAt)} />
           </>
         )}
       </div>
 
       {calc && (
         <div className="card space-y-2 text-sm">
-          <h2 className="font-semibold">How it was computed</h2>
-          <ol className="list-decimal space-y-2 pl-5 text-gray-300">
-            <li>SHA-256(seed) = <code className="break-all">{calc.hash}</code> {calc.hashOk ? '✔ matches' : '✘ differs'}</li>
-            <li>message = gameId + &quot;:&quot; + sorted numbers = <code className="break-all">{calc.message}</code></li>
-            <li>HMAC-SHA256(key = seed, message) = <code className="break-all">{calc.hmac}</code></li>
-            <li>index = that value as an integer mod {data.numbers.length} = <b>{calc.index}</b></li>
-            <li>winner = sorted numbers[{calc.index}] = <b className="text-gold-400">{calc.winningNumber}</b></li>
+          <h2 className="font-semibold">{t('verify.how')}</h2>
+          <ol className="list-decimal space-y-2 pl-5 text-slate-700">
+            <li>{t('verify.sha')} = <code className="break-all">{calc.hash}</code> {calc.hashOk ? t('verify.matches') : t('verify.differs')}</li>
+            <li>{t('verify.message')} = <code className="break-all">{calc.message}</code></li>
+            <li>{t('verify.hmac')} = <code className="break-all">{calc.hmac}</code></li>
+            <li>{t('verify.index', { n: data.numbers.length })} = <b>{calc.index}</b></li>
+            <li>{t('verify.winner', { i: calc.index })} = <b className="text-gold-700">{calc.winningNumber}</b></li>
           </ol>
-          <p className="text-gray-500">The seed was fixed (and its hash published) before anyone joined, so neither the house nor any player could steer the result.</p>
+          <p className="text-slate-500">{t('verify.explain')}</p>
         </div>
       )}
-      <Link href={`/room/${data.gameId}`} className="btn-secondary btn-sm">Back to room</Link>
+      <Link href={`/room/${data.gameId}`} className="btn-secondary btn-sm">{t('verify.back')}</Link>
     </main>
   );
 }
@@ -95,7 +97,7 @@ export default function Verify() {
 function Row({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <div className="grid gap-1 sm:grid-cols-3">
-      <div className="text-gray-500">{k}</div>
+      <div className="text-slate-500">{k}</div>
       <div className="sm:col-span-2">{v}</div>
     </div>
   );

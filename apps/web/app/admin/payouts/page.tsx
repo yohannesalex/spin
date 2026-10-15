@@ -26,18 +26,18 @@ export default function Payouts() {
       {tab === 'queue' ? (
         <>
           <section>
-            <h2 className="mb-2 font-semibold">Pending withdrawals <span className="text-gray-500">(oldest first; red = waiting over 24 h)</span></h2>
-            {data.withdrawals.length === 0 ? <p className="text-gray-500">No pending withdrawals.</p> : (
+            <h2 className="mb-2 font-semibold">Pending withdrawals <span className="text-slate-500">(oldest first; red = waiting over 24 h)</span></h2>
+            {data.withdrawals.length === 0 ? <p className="text-slate-500">No pending withdrawals.</p> : (
               <div className="overflow-x-auto">
                 <table className="table">
                   <thead><tr><th>Requested</th><th>User</th><th>Amount</th><th>Send to</th><th>Status</th><th /></tr></thead>
                   <tbody>
                     {data.withdrawals.map((w) => (
-                      <tr key={w.id} className={w.overdue ? 'bg-red-950/40' : ''}>
-                        <td className={w.overdue ? 'font-semibold text-red-300' : ''}>{dateTime(w.createdAt)}</td>
-                        <td><Link href={`/admin/users/${w.user.id}`} className="underline">{w.user.fullName}</Link><div className="text-xs text-gray-500">{w.user.phone} · {w.user.status}</div></td>
+                      <tr key={w.id} className={w.overdue ? 'bg-red-50' : ''}>
+                        <td className={w.overdue ? 'font-semibold text-red-600' : ''}>{dateTime(w.createdAt)}</td>
+                        <td><Link href={`/admin/users/${w.user.id}`} className="underline">{w.user.fullName}</Link><div className="text-xs text-slate-500">{w.user.phone} · {w.user.status}</div></td>
                         <td className="font-semibold tabular-nums">{birr(w.amountCents)}</td>
-                        <td>{w.method} <span className="font-mono">{w.destAccount}</span><div className="text-xs text-gray-500">{w.destName}</div></td>
+                        <td>{w.method} <span className="font-mono">{w.destAccount}</span><div className="text-xs text-slate-500">{w.destName}</div></td>
                         <td><StatusBadge status={w.status} /></td>
                         <td className="space-x-1 whitespace-nowrap">
                           <ActionButton label="Mark paid" className="btn-primary btn-sm" path={`/admin/payouts/${w.id}/paid`} multipart reasonLabel="Note (optional)"
@@ -54,8 +54,8 @@ export default function Payouts() {
           </section>
           <section>
             <h2 className="mb-2 font-semibold">Unpaid winners (last 30 days)</h2>
-            <p className="mb-2 text-sm text-gray-500">Prizes are already in the winners&apos; wallets. &quot;Pay winner now&quot; sends the full prize out and records it as a paid withdrawal in one step.</p>
-            {data.unpaidWinners.length === 0 ? <p className="text-gray-500">None.</p> : (
+            <p className="mb-2 text-sm text-slate-500">Prizes are already in the winners&apos; wallets. &quot;Pay winner now&quot; sends the full prize out and records it as a paid withdrawal in one step.</p>
+            {data.unpaidWinners.length === 0 ? <p className="text-slate-500">None.</p> : (
               <div className="overflow-x-auto">
                 <table className="table">
                   <thead><tr><th>Drawn</th><th>Winner</th><th>Number</th><th>Prize</th><th /></tr></thead>
@@ -63,7 +63,7 @@ export default function Payouts() {
                     {data.unpaidWinners.map((g) => (
                       <tr key={g.id}>
                         <td><Link className="underline" href={`/admin/games/${g.id}`}>{dateTime(g.drawnAt)}</Link></td>
-                        <td>{g.winner ? <Link className="underline" href={`/admin/users/${g.winner.id}`}>{g.winner.fullName}</Link> : '—'}<div className="text-xs text-gray-500">{g.winner?.phone}</div></td>
+                        <td>{g.winner ? <Link className="underline" href={`/admin/users/${g.winner.id}`}>{g.winner.fullName}</Link> : '—'}<div className="text-xs text-slate-500">{g.winner?.phone}</div></td>
                         <td>{g.winningNumber}</td>
                         <td className="font-semibold">{birr(g.prizeCents)}</td>
                         <td>
@@ -88,7 +88,7 @@ export default function Payouts() {
           <table className="table">
             <thead><tr><th>Updated</th><th>User</th><th>Amount</th><th>To</th><th>Status</th><th>Ref / reason</th></tr></thead>
             <tbody>{history.data.map((w) => (
-              <tr key={w.id}><td>{dateTime(w.updatedAt)}</td><td>{w.user.fullName}</td><td>{birr(w.amountCents)}</td><td>{w.method} {w.destAccount}</td><td><StatusBadge status={w.status} /></td><td className="text-gray-400">{w.transferRef ?? w.rejectReason}</td></tr>
+              <tr key={w.id}><td>{dateTime(w.updatedAt)}</td><td>{w.user.fullName}</td><td>{birr(w.amountCents)}</td><td>{w.method} {w.destAccount}</td><td><StatusBadge status={w.status} /></td><td className="text-slate-600">{w.transferRef ?? w.rejectReason}</td></tr>
             ))}</tbody>
           </table>
         </div>

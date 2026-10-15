@@ -1,4 +1,5 @@
 import { deviceFingerprint } from './fingerprint';
+import { currentLang, serverText } from './locale';
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public body: Record<string, unknown> = {}) {
@@ -38,6 +39,8 @@ export async function api<T = any>(path: string, opts: ApiOptions = {}, retried 
     headers,
     credentials: 'include',
     body: opts.body === undefined ? undefined : isForm ? (opts.body as FormData) : JSON.stringify(opts.body),
+  }).catch(() => {
+    throw new ApiError(0, currentLang() === 'am' ? 'የኔትወርክ ችግር። ግንኙነትዎን አረጋግጠው እንደገና ይሞክሩ።' : 'Network error. Check your connection and try again.');
   });
 
   // Access tokens live 15 minutes; transparently rotate the refresh token once.
@@ -54,7 +57,7 @@ export async function api<T = any>(path: string, opts: ApiOptions = {}, retried 
   }
   if (!res.ok) {
     const body = typeof data === 'object' && data ? data : {};
-    const msg = Array.isArray(body.message) ? body.message.join('. ') : body.message || res.statusText;
+    const msg = Array.isArray(body.message) ? body.message.map(serverText).join('. ') : serverText(body.message || res.statusText);
     throw new ApiError(res.status, msg, body);
   }
   return data as T;

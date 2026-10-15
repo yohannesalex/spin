@@ -34,7 +34,7 @@ function VerifyInner() {
   return (
     <main className="mx-auto max-w-md px-4 py-8">
       <h1 className="mb-2 text-2xl font-bold">{t('auth.otpTitle')}</h1>
-      <p className="mb-6 text-gray-400">{t('auth.otpSent', { phone })}</p>
+      <p className="mb-6 text-slate-600">{t('auth.otpSent', { phone })}</p>
       <form onSubmit={submit} className="card space-y-4">
         {error && <Alert>{error}</Alert>}
         <OtpInput value={code} onChange={setCode} phone={phone} purpose="REGISTER" />

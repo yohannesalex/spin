@@ -14,11 +14,11 @@ export default function Alerts() {
   return (
     <div className="space-y-3">
       <h1 className="text-2xl font-bold">Alerts</h1>
-      {data.items.length === 0 && <p className="text-gray-500">No alerts.</p>}
+      {data.items.length === 0 && <p className="text-slate-500">No alerts.</p>}
       {data.items.map((n) => (
-        <div key={n.id} className={`card ${!n.readAt ? 'border-red-500/50' : ''}`}>
-          <div className="flex justify-between"><b>{n.title}</b><span className="text-xs text-gray-500">{dateTime(n.createdAt)}</span></div>
-          <p className="text-sm text-gray-300">{n.body}</p>
+        <div key={n.id} className={`card ${!n.readAt ? 'border-red-300' : ''}`}>
+          <div className="flex justify-between"><b>{n.title}</b><span className="text-xs text-slate-500">{dateTime(n.createdAt)}</span></div>
+          <p className="text-sm text-slate-700">{n.body}</p>
         </div>
       ))}
     </div>

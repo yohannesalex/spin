@@ -42,13 +42,59 @@ export class AfroMessageProvider implements SmsProvider {
   }
 }
 
+/**
+ * SMS Gateway for Android (https://sms-gate.app): sends real SMS from an Android phone's own SIM.
+ * Works with the app's Cloud Server (default URL) or Local Server (http://<phone-ip>:8080/message).
+ * The gateway accepts the message and the phone sends it shortly after.
+ */
+export class SmsGateProvider implements SmsProvider {
+  private log = new Logger('SmsGate');
+  constructor(private url: string, private username: string, private password: string) {}
+
+  async sendOtp(phone: string, _code: string, message: string) {
+    await this.send(phone, message);
+  }
+
+  async send(phone: string, message: string) {
+    const res = await fetch(this.url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${this.username}:${this.password}`).toString('base64')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ textMessage: { text: message }, phoneNumbers: [phone] }),
+      signal: AbortSignal.timeout(10_000),
+    }).catch((e: Error) => {
+      this.log.error(`SMS to ${phone.slice(0, 6)}… failed: ${e.message}`);
+      throw new Error('SMS delivery failed');
+    });
+    if (!res.ok) {
+      // Never log the message itself: it may contain an OTP (REQ-SEC-06).
+      this.log.error(`SMS to ${phone.slice(0, 6)}… failed: HTTP ${res.status}`);
+      throw new Error('SMS delivery failed');
+    }
+  }
+}
+
 export function createSmsProvider(): SmsProvider {
+  const log = new Logger('SMS');
+  if (process.env.LOG_OTP === 'true') log.warn('LOG_OTP is on: OTP codes are written to the log. Turn it off before going live.');
+  if (process.env.SMS_PROVIDER === 'smsgate' && process.env.SMSGATE_USERNAME && process.env.SMSGATE_PASSWORD) {
+    return new SmsGateProvider(
+      process.env.SMSGATE_URL || 'https://api.sms-gate.app/3rdparty/v1/messages',
+      process.env.SMSGATE_USERNAME,
+      process.env.SMSGATE_PASSWORD,
+    );
+  }
   if (process.env.SMS_PROVIDER === 'afromessage' && process.env.AFROMESSAGE_TOKEN) {
     return new AfroMessageProvider(
       process.env.AFROMESSAGE_TOKEN,
       process.env.AFROMESSAGE_SENDER_ID || undefined,
       process.env.AFROMESSAGE_IDENTIFIER_ID || undefined,
     );
+  }
+  if (process.env.SMS_PROVIDER && process.env.SMS_PROVIDER !== 'console') {
+    log.warn(`SMS_PROVIDER=${process.env.SMS_PROVIDER} is missing its credentials; codes are only printed to the log.`);
   }
   return new ConsoleSmsProvider();
 }

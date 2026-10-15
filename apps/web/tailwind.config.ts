@@ -5,10 +5,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: { 950: '#0b0f17', 900: '#111827', 800: '#1a2233', 700: '#263044', 600: '#37425a' },
-        gold: { 300: '#fde68a', 400: '#fbbf24', 500: '#f59e0b' },
+        // Brand: warm gold. Fills use 400–500 with dark text; text on light backgrounds uses 600–800.
+        gold: { 50: '#fffbeb', 100: '#fef3c7', 200: '#fde68a', 300: '#fcd34d', 400: '#fbbf24', 500: '#f59e0b', 600: '#c47a06', 700: '#a16207', 800: '#854d0e' },
       },
       fontFamily: { sans: ['ui-sans-serif', 'system-ui', 'Noto Sans Ethiopic', 'sans-serif'] },
+      boxShadow: {
+        card: '0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06)',
+        lift: '0 4px 6px -1px rgb(15 23 42 / 0.06), 0 10px 24px -4px rgb(15 23 42 / 0.10)',
+      },
     },
   },
   plugins: [],

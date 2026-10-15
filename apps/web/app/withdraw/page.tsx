@@ -6,7 +6,7 @@ import { api, newIdempotencyKey } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { birr, dateTime } from '@/lib/format';
 import { useApi } from '@/lib/hooks';
-import { useI18n } from '@/lib/i18n';
+import { Key, useI18n } from '@/lib/i18n';
 
 interface W { id: string; amountCents: number; method: string; destAccount: string; status: string; transferRef: string | null; rejectReason: string | null; createdAt: string }
 
@@ -53,16 +53,16 @@ function WithdrawInner() {
       <h1 className="text-2xl font-bold">{t('withdraw.title')}</h1>
       <div className="card flex justify-between">
         <div>
-          <div className="text-xs text-gray-500">{t('wallet.withdrawable')}</div>
-          <div className="text-2xl font-bold text-gold-400">{birr(wallet.data.withdrawableCents)}</div>
+          <div className="text-xs text-slate-500">{t('wallet.withdrawable')}</div>
+          <div className="text-2xl font-bold text-gold-700">{birr(wallet.data.withdrawableCents)}</div>
         </div>
-        <div className="text-right text-sm text-gray-500">
+        <div className="text-right text-sm text-slate-500">
           <div>{t('wallet.balance')}: {birr(wallet.data.balanceCents)}</div>
-          {config.data && <div>Min {birr(config.data.minWithdrawalCents)}</div>}
+          {config.data && <div>{t('withdraw.min', { amount: birr(config.data.minWithdrawalCents) })}</div>}
         </div>
       </div>
       {config.data && wallet.data.withdrawableCents < wallet.data.balanceCents && (
-        <Alert kind="info">Deposits become withdrawable {config.data.withdrawalHoldHours} hours after they are credited. Winnings can be withdrawn right away.</Alert>
+        <Alert kind="info">{t('withdraw.holdInfo', { hours: config.data.withdrawalHoldHours })}</Alert>
       )}
 
       <form onSubmit={submit} className="card space-y-4">
@@ -73,8 +73,8 @@ function WithdrawInner() {
         </Field>
         <Field label={t('withdraw.method')}>
           <select className="input" value={f.method} onChange={(e) => setF({ ...f, method: e.target.value, destAccount: e.target.value === 'TELEBIRR' ? user?.phone ?? '' : '' })}>
-            <option value="TELEBIRR">Telebirr</option>
-            <option value="CBE">CBE</option>
+            <option value="TELEBIRR">{t('provider.TELEBIRR')}</option>
+            <option value="CBE">{t('provider.CBE')}</option>
           </select>
         </Field>
         <Field label={t('withdraw.account')}>
@@ -89,16 +89,16 @@ function WithdrawInner() {
       <div className="card">
         <h2 className="mb-2 font-semibold">{t('withdraw.recent')}</h2>
         {(list.data ?? []).length === 0 ? (
-          <p className="text-sm text-gray-500">—</p>
+          <p className="text-sm text-slate-500">—</p>
         ) : (
-          <ul className="divide-y divide-ink-800">
+          <ul className="divide-y divide-slate-100">
             {list.data!.map((w) => (
               <li key={w.id} className="flex items-center justify-between py-2 text-sm">
                 <div>
-                  <div>{birr(w.amountCents)} → {w.method} {w.destAccount}</div>
-                  <div className="text-xs text-gray-500">
+                  <div>{birr(w.amountCents)} → {t(`provider.${w.method}` as Key)} {w.destAccount}</div>
+                  <div className="text-xs text-slate-500">
                     {dateTime(w.createdAt)}
-                    {w.transferRef && ` · Ref ${w.transferRef}`}
+                    {w.transferRef && ` · ${t('withdraw.ref', { ref: w.transferRef })}`}
                     {w.rejectReason && ` · ${w.rejectReason}`}
                   </div>
                 </div>

@@ -17,7 +17,7 @@ export function RequireLogin({ children, player = true }: { children: ReactNode;
   if (player && user.role !== 'PLAYER') {
     return (
       <main className="mx-auto max-w-md px-4 py-8">
-        <Alert kind="info">Admins cannot play. Use the admin portal.</Alert>
+        <Alert kind="info">{t('auth.adminsCannotPlay')}</Alert>
       </main>
     );
   }
@@ -25,7 +25,7 @@ export function RequireLogin({ children, player = true }: { children: ReactNode;
     <>
       {user.status === 'SUSPENDED' && (
         <div className="mx-auto max-w-5xl px-4 pt-4">
-          <Alert kind="warn">Your account is suspended pending review. Playing, deposits and withdrawals are paused.</Alert>
+          <Alert kind="warn">{t('auth.suspended')}</Alert>
         </div>
       )}
       {children}

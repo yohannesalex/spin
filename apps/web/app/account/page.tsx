@@ -16,7 +16,7 @@ export default function Account() {
         <h1 className="text-2xl font-bold">{t('account.title')}</h1>
         <div className="card space-y-1">
           <div className="text-lg font-semibold">{user?.fullName}</div>
-          <div className="text-gray-400">{user?.phone}</div>
+          <div className="text-slate-600">{user?.phone}</div>
         </div>
         <div className="card flex items-center justify-between">
           <span>{t('account.language')}</span>

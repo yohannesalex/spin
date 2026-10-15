@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService, Tx } from '../common/prisma.service';
 import { sms } from './messages';
-import { SMS_PROVIDER, SmsProvider } from './sms.provider';
+import { ConsoleSmsProvider, SMS_PROVIDER, SmsProvider } from './sms.provider';
 
 type SmsKey = Parameters<typeof sms>[0];
 
@@ -25,8 +25,15 @@ export class NotificationsService {
     this.smsProvider.send(user.phone, sms(key, user.language, params)).catch((e) => this.log.error(e.message));
   }
 
+  /**
+   * LOG_OTP=true also prints every code to the log, and a failed SMS no longer blocks the user
+   * (they can be given the code from the log). Testing only: it breaks REQ-SEC-06 by design.
+   */
   async sendOtp(phone: string, code: string, language: 'en' | 'am' = 'en') {
-    await this.smsProvider.sendOtp(phone, code, sms('otp', language, { code }));
+    const message = sms('otp', language, { code });
+    if (process.env.LOG_OTP !== 'true') return this.smsProvider.sendOtp(phone, code, message);
+    if (!(this.smsProvider instanceof ConsoleSmsProvider)) this.log.warn(`[LOG_OTP] ${phone}: ${code}`);
+    await this.smsProvider.sendOtp(phone, code, message).catch((e) => this.log.error(`OTP SMS failed, code is in the log above: ${e.message}`));
   }
 
   /** REQ-NOT-01: admin alerts go to every admin's in-app inbox and optionally to Telegram. */

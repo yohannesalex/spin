@@ -5,7 +5,8 @@ import { Alert, Field, Spinner, StatusBadge } from '@/components/ui';
 import { api, newIdempotencyKey } from '@/lib/api';
 import { birr, dateTime } from '@/lib/format';
 import { useApi } from '@/lib/hooks';
-import { useI18n } from '@/lib/i18n';
+import { Key, useI18n } from '@/lib/i18n';
+import { serverText } from '@/lib/locale';
 
 interface Info { accounts: { provider: 'TELEBIRR' | 'CBE'; accountNumber: string; accountName: string }[]; minDepositCents: number; maxDepositCents: number }
 interface Dep { id: string; provider: string; claimedAmountCents: number; creditedCents: number | null; status: string; flagReasons: string[]; createdAt: string; reference: string | null }
@@ -21,6 +22,7 @@ function DepositInner() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [current, setCurrent] = useState<Dep | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const reloadList = list.reload;
 
@@ -44,7 +46,7 @@ function DepositInner() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!file && !reference.trim()) return setError(t('deposit.receipt'));
+    if (!file && !reference.trim()) return setError(t('deposit.needReceipt'));
     setBusy(true);
     try {
       const fd = new FormData();
@@ -72,10 +74,10 @@ function DepositInner() {
   return (
     <main className="mx-auto max-w-xl space-y-4 px-4 py-6">
       <h1 className="text-2xl font-bold">{t('deposit.title')}</h1>
-      <div className="flex rounded-xl border border-ink-700 p-1">
+      <div className="flex rounded-xl border border-slate-200 p-1">
         {(['TELEBIRR', 'CBE'] as const).map((p) => (
-          <button key={p} onClick={() => setProvider(p)} className={`flex-1 rounded-lg py-2 text-sm font-semibold ${provider === p ? 'bg-gold-400 text-ink-950' : 'text-gray-300'}`}>
-            {p === 'TELEBIRR' ? 'Telebirr' : 'CBE Mobile Banking'}
+          <button key={p} onClick={() => setProvider(p)} className={`flex-1 rounded-lg py-2 text-sm font-semibold ${provider === p ? 'bg-gold-400 text-slate-900' : 'text-slate-700'}`}>
+            {p === 'TELEBIRR' ? t('provider.TELEBIRR') : t('deposit.cbe')}
           </button>
         ))}
       </div>
@@ -83,20 +85,20 @@ function DepositInner() {
       <div className="card space-y-2">
         <h2 className="font-semibold">{t('deposit.step1')}</h2>
         {accounts.length === 0 ? (
-          <p className="text-gray-500">{t('deposit.noAccounts')}</p>
+          <p className="text-slate-500">{t('deposit.noAccounts')}</p>
         ) : (
           accounts.map((a) => (
-            <div key={a.accountNumber} className="rounded-xl bg-ink-800 p-3">
-              <div className="text-xs text-gray-500">{t('deposit.accountNumber')}</div>
+            <div key={a.accountNumber} className="rounded-xl bg-slate-100 p-3">
+              <div className="text-xs text-slate-500">{t('deposit.accountNumber')}</div>
               <div className="flex items-center justify-between">
                 <span className="text-xl font-bold tabular-nums">{a.accountNumber}</span>
-                <button className="btn-secondary btn-sm" onClick={() => navigator.clipboard?.writeText(a.accountNumber)}>Copy</button>
+                <button className="btn-secondary btn-sm" onClick={() => navigator.clipboard?.writeText(a.accountNumber).then(() => setCopied(a.accountNumber))}>{copied === a.accountNumber ? t('common.copied') : t('common.copy')}</button>
               </div>
-              <div className="mt-1 text-xs text-gray-500">{t('deposit.accountName')}: <span className="text-gray-200">{a.accountName}</span></div>
+              <div className="mt-1 text-xs text-slate-500">{t('deposit.accountName')}: <span className="text-slate-800">{a.accountName}</span></div>
             </div>
           ))
         )}
-        <p className="text-sm text-gray-500">{t('deposit.limits', { min: birr(info.data.minDepositCents), max: birr(info.data.maxDepositCents) })}</p>
+        <p className="text-sm text-slate-500">{t('deposit.limits', { min: birr(info.data.minDepositCents), max: birr(info.data.maxDepositCents) })}</p>
       </div>
 
       <form onSubmit={submit} className="card space-y-4">
@@ -105,8 +107,13 @@ function DepositInner() {
         <Field label={t('deposit.amount')}>
           <input className="input" type="number" inputMode="decimal" step="0.01" min="1" required value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
-        <Field label={t('deposit.receipt')} hint="JPG or PNG, up to 5 MB">
-          <input ref={fileRef} className="input file:mr-3 file:rounded-lg file:border-0 file:bg-ink-700 file:px-3 file:py-1 file:text-gray-200" type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+        <Field label={t('deposit.receipt')} hint={t('deposit.fileHint')}>
+          {/* The browser's own file button can't be translated, so it is hidden behind ours (the Field label opens it). */}
+          <input ref={fileRef} className="sr-only" type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <span className="input flex cursor-pointer items-center gap-3">
+            <span className="shrink-0 rounded-lg bg-slate-100 px-3 py-1 text-sm font-medium text-slate-800">{t('deposit.chooseFile')}</span>
+            <span className="truncate text-sm text-slate-500">{file?.name ?? t('deposit.noFile')}</span>
+          </span>
         </Field>
         <Field label={t('deposit.orPaste')}>
           <input className="input" value={reference} onChange={(e) => setReference(e.target.value)} placeholder={provider === 'TELEBIRR' ? 'https://transactioninfo.ethiotelecom.et/receipt/…' : 'FT…'} />
@@ -117,24 +124,24 @@ function DepositInner() {
       {current && (
         <Alert kind={current.status === 'CREDITED' ? 'success' : current.status === 'REJECTED' ? 'error' : current.status === 'VERIFYING' ? 'info' : 'warn'}>
           <div className="flex items-center gap-2">
-            {current.status === 'VERIFYING' && <span className="h-3 w-3 animate-spin rounded-full border-2 border-sky-300 border-t-transparent" />}
+            {current.status === 'VERIFYING' && <span className="h-3 w-3 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />}
             <b>{birr(current.claimedAmountCents)}</b> — {statusText(current.status)}
           </div>
-          {current.flagReasons.length > 0 && <div className="mt-1 text-xs">{current.flagReasons.join(', ')}</div>}
+          {current.flagReasons.length > 0 && <div className="mt-1 text-xs">{current.flagReasons.map(serverText).join(', ')}</div>}
         </Alert>
       )}
 
       <div className="card">
         <h2 className="mb-2 font-semibold">{t('deposit.recent')}</h2>
         {(list.data ?? []).length === 0 ? (
-          <p className="text-sm text-gray-500">—</p>
+          <p className="text-sm text-slate-500">—</p>
         ) : (
-          <ul className="divide-y divide-ink-800">
+          <ul className="divide-y divide-slate-100">
             {list.data!.map((d) => (
               <li key={d.id} className="flex items-center justify-between py-2 text-sm">
                 <div>
-                  <div>{birr(d.creditedCents ?? d.claimedAmountCents)} · {d.provider}</div>
-                  <div className="text-xs text-gray-500">{dateTime(d.createdAt)}{d.reference && ` · ${d.reference}`}</div>
+                  <div>{birr(d.creditedCents ?? d.claimedAmountCents)} · {t(`provider.${d.provider}` as Key)}</div>
+                  <div className="text-xs text-slate-500">{dateTime(d.createdAt)}{d.reference && ` · ${d.reference}`}</div>
                 </div>
                 <StatusBadge status={d.status} />
               </li>

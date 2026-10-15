@@ -48,12 +48,12 @@ export default function Register() {
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="mt-1" checked={f.termsAccepted} onChange={(e) => setF({ ...f, termsAccepted: e.target.checked })} required />
           <span>
-            {t('auth.terms')} (<Link href="/rules" className="text-gold-400 underline">{t('nav.rules')}</Link>)
+            {t('auth.terms')} (<Link href="/rules" className="text-gold-700 underline">{t('nav.rules')}</Link>)
           </span>
         </label>
         <button className="btn-primary w-full" disabled={busy}>{t('auth.register')}</button>
-        <p className="text-center text-sm text-gray-400">
-          {t('auth.haveAccount')} <Link href="/login" className="text-gold-400">{t('nav.login')}</Link>
+        <p className="text-center text-sm text-slate-600">
+          {t('auth.haveAccount')} <Link href="/login" className="text-gold-700">{t('nav.login')}</Link>
         </p>
       </form>
     </main>

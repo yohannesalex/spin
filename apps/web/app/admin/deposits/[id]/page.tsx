@@ -36,16 +36,16 @@ export default function DepositDetail() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Link href="/admin/deposits" className="text-sm text-gray-400">← Deposits</Link>
+        <Link href="/admin/deposits" className="text-sm text-slate-600">← Deposits</Link>
         <h1 className="text-2xl font-bold">{birr(data.claimedAmountCents)} · {data.provider}</h1>
         <StatusBadge status={data.status} />
       </div>
-      <div className="text-sm text-gray-400">
+      <div className="text-sm text-slate-600">
         <Link href={`/admin/users/${data.user.id}`} className="underline">{data.user.fullName}</Link> · {data.user.phone} · <StatusBadge status={data.user.status} /> · attempts {data.attempts}
       </div>
-      {data.flagLabels.length > 0 && <div className="rounded-xl border border-amber-700 bg-amber-950/50 p-3 text-amber-200">Failed checks: <b>{data.flagLabels.join(', ')}</b></div>}
+      {data.flagLabels.length > 0 && <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-800">Failed checks: <b>{data.flagLabels.join(', ')}</b></div>}
       {data.sameReference.length > 0 && (
-        <div className="rounded-xl border border-red-700 bg-red-950/50 p-3 text-sm text-red-200">
+        <div className="rounded-xl border border-red-300 bg-red-50 p-3 text-sm text-red-800">
           Same reference used by: {data.sameReference.map((s) => <Link key={s.id} href={`/admin/deposits/${s.id}`} className="mr-2 underline">{s.user.fullName} ({s.status})</Link>)}
         </div>
       )}
@@ -69,29 +69,29 @@ export default function DepositDetail() {
               <img src={`/api/admin/deposits/${id}/image`} alt="Receipt upload" className="max-h-[520px] w-full rounded-lg object-contain" />
             </a>
           ) : (
-            <p className="text-sm text-gray-500">No image — reference pasted: <code>{data.referenceInput}</code></p>
+            <p className="text-sm text-slate-500">No image — reference pasted: <code>{data.referenceInput}</code></p>
           )}
-          <p className="mt-2 text-xs text-gray-500">The image is only used to find the reference; the official receipt is the source of truth.</p>
+          <p className="mt-2 text-xs text-slate-500">The image is only used to find the reference; the official receipt is the source of truth.</p>
         </div>
         <div className="card xl:col-span-2">
           <h2 className="mb-2 font-semibold">Claimed vs official receipt</h2>
-          <table className="table">
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"><table className="table">
             <thead><tr><th>Field</th><th>User / account</th><th>Official receipt</th></tr></thead>
-            <tbody>{rows.map(([k, a, b]) => <tr key={k}><td className="text-gray-400">{k}</td><td>{a}</td><td>{b}</td></tr>)}</tbody>
-          </table>
-          {p.match && <p className="mt-2 text-xs text-gray-400">Sender name score: {p.match.senderScore} · matched receiving account: {p.match.receiverMatched ?? 'none'}</p>}
+            <tbody>{rows.map(([k, a, b]) => <tr key={k}><td className="text-slate-600">{k}</td><td>{a}</td><td>{b}</td></tr>)}</tbody>
+          </table></div>
+          {p.match && <p className="mt-2 text-xs text-slate-600">Sender name score: {p.match.senderScore} · matched receiving account: {p.match.receiverMatched ?? 'none'}</p>}
           {data.rawReceiptKey && <a className="btn-secondary btn-sm mt-3" href={`/api/admin/deposits/${id}/raw`} target="_blank" rel="noreferrer">Open fetched official receipt</a>}
-          <details className="mt-3"><summary className="cursor-pointer text-sm text-gray-400">Parsed JSON</summary><JsonBlock value={data.parsedJson} /></details>
+          <details className="mt-3"><summary className="cursor-pointer text-sm text-slate-600">Parsed JSON</summary><JsonBlock value={data.parsedJson} /></details>
         </div>
       </div>
 
       <div className="card">
         <h2 className="mb-2 font-semibold">Flags</h2>
-        <table className="table">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"><table className="table">
           <thead><tr><th>When</th><th>Severity</th><th>Reason</th><th>Status</th><th>Resolution</th></tr></thead>
-          <tbody>{data.flags.map((f) => <tr key={f.id}><td>{dateTime(f.createdAt)}</td><td><StatusBadge status={f.severity} /></td><td>{f.reason}</td><td><StatusBadge status={f.status} /></td><td className="text-gray-400">{f.resolutionNote}</td></tr>)}</tbody>
-        </table>
-        {data.reviewNote && <p className="mt-2 text-sm text-gray-400">Review note: {data.reviewNote}</p>}
+          <tbody>{data.flags.map((f) => <tr key={f.id}><td>{dateTime(f.createdAt)}</td><td><StatusBadge status={f.severity} /></td><td>{f.reason}</td><td><StatusBadge status={f.status} /></td><td className="text-slate-600">{f.resolutionNote}</td></tr>)}</tbody>
+        </table></div>
+        {data.reviewNote && <p className="mt-2 text-sm text-slate-600">Review note: {data.reviewNote}</p>}
       </div>
     </div>
   );

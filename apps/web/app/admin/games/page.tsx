@@ -43,7 +43,7 @@ export default function Games() {
       </div>
       <section>
         <h2 className="mb-2 font-semibold">Room templates</h2>
-        <p className="mb-2 text-sm text-gray-500">Each active template keeps one open room; a new one opens as soon as it fills or closes. Edits apply to rooms opened afterwards.</p>
+        <p className="mb-2 text-sm text-slate-500">Each active template keeps one open room; a new one opens as soon as it fills or closes. Edits apply to rooms opened afterwards.</p>
         {!templates.data ? <Spinner /> : (
           <div className="overflow-x-auto">
             <table className="table">
@@ -76,7 +76,7 @@ export default function Games() {
                 <tbody>
                   {games.data.items.map((g) => (
                     <tr key={g.id}>
-                      <td><Link href={`/admin/games/${g.id}`} className="text-gold-400 underline">{dateTime(g.openedAt)}</Link></td>
+                      <td><Link href={`/admin/games/${g.id}`} className="text-gold-700 underline">{dateTime(g.openedAt)}</Link></td>
                       <td>{birr(g.stakeCents)}</td>
                       <td>{g._count.entries} / {g.capacity}</td>
                       <td><StatusBadge status={g.status} /></td>

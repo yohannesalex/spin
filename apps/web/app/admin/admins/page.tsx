@@ -20,15 +20,15 @@ export default function Admins() {
             { name: 'password', label: 'Temporary password', required: true, hint: 'At least 8 characters with a letter and a digit' },
           ]} />
       </div>
-      <table className="table">
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"><table className="table">
         <thead><tr><th>Name</th><th>Phone</th><th>Role</th><th>Status</th><th>Created</th><th /></tr></thead>
         <tbody>
           {data.map((a) => (
             <tr key={a.id}>
-              <td>{a.fullName}{a.id === user?.id && <span className="ml-1 text-xs text-gray-500">(you)</span>}</td>
+              <td>{a.fullName}{a.id === user?.id && <span className="ml-1 text-xs text-slate-500">(you)</span>}</td>
               <td>{a.phone}</td>
               <td>{a.role}</td>
-              <td>{a.disabled ? <span className="text-red-400">disabled</span> : 'active'}</td>
+              <td>{a.disabled ? <span className="text-red-600">disabled</span> : 'active'}</td>
               <td>{dateTime(a.createdAt)}</td>
               <td className="space-x-1 whitespace-nowrap">
                 {a.id !== user?.id && (a.disabled
@@ -39,7 +39,7 @@ export default function Admins() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </div>
   );
 }

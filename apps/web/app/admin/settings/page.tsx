@@ -56,7 +56,7 @@ export default function Settings() {
       <h1 className="text-2xl font-bold">Settings</h1>
       <section className="card">
         <h2 className="mb-1 font-semibold">Receiving accounts</h2>
-        <p className="mb-3 text-sm text-gray-500">Deposits are credited automatically only when the official receipt shows one of these active accounts as the receiver (number and name).</p>
+        <p className="mb-3 text-sm text-slate-500">Deposits are credited automatically only when the official receipt shows one of these active accounts as the receiver (number and name).</p>
         <div className="space-y-2">
           {accounts.map((a, i) => (
             <div key={i} className="grid gap-2 sm:grid-cols-[120px_1fr_1fr_90px_40px]">
@@ -76,25 +76,25 @@ export default function Settings() {
 
       <section className="card">
         <h2 className="mb-3 font-semibold">Limits and rules</h2>
-        <table className="table">
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"><table className="table">
           <tbody>
             {FIELDS.map((f) => {
               const v = data.settings[f.key];
               return (
                 <tr key={f.key}>
-                  <td className="text-gray-400">{f.label}</td>
+                  <td className="text-slate-600">{f.label}</td>
                   <td className="font-semibold">{f.unit === 'bool' ? (v ? 'ON' : 'off') : `${toDisplay(v, f.unit)}${f.unit === 'birr' ? ' birr' : f.unit === 'pct' ? '%' : ''}`}</td>
                   <td className="text-right"><EditValue field={f} current={v} onEdit={(value) => setEdit({ key: f.key, label: f.label, value })} /></td>
                 </tr>
               );
             })}
           </tbody>
-        </table>
+        </table></div>
       </section>
 
       <section className="card text-sm">
         <h2 className="mb-2 font-semibold">Secrets (environment variables)</h2>
-        <p className="mb-2 text-gray-500">Provider keys are never stored in the database or shown here. Set them in the API server&apos;s environment.</p>
+        <p className="mb-2 text-slate-500">Provider keys are never stored in the database or shown here. Set them in the API server&apos;s environment.</p>
         <ul className="space-y-1">
           {Object.entries(data.secrets).map(([k, v]) => <li key={k}>{v ? '✔' : '✘'} {k.replace(/Configured$/, '').replace(/([A-Z])/g, ' $1')}</li>)}
         </ul>

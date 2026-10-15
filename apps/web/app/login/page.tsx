@@ -58,8 +58,8 @@ function LoginInner() {
         </Field>
         <button className="btn-primary w-full" disabled={busy}>{t('auth.login')}</button>
         <div className="flex justify-between text-sm">
-          <Link href="/forgot" className="text-gray-400 hover:text-white">{t('auth.forgot')}</Link>
-          <Link href="/register" className="text-gold-400">{t('nav.register')}</Link>
+          <Link href="/forgot" className="text-slate-600 hover:text-slate-900">{t('auth.forgot')}</Link>
+          <Link href="/register" className="text-gold-700">{t('nav.register')}</Link>
         </div>
       </form>
     </main>

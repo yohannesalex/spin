@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { birr, timeLeft } from '@/lib/format';
 import { useNow } from '@/lib/hooks';
 import { useI18n } from '@/lib/i18n';
+import { serverText } from '@/lib/locale';
 import { getSocket, noteServerTime, serverNow } from '@/lib/socket';
 
 interface GameView {
@@ -181,25 +182,25 @@ export default function Room() {
     <main className="mx-auto max-w-3xl px-4 py-6">
       {phase === 'done' && youWon && <Confetti />}
 
-      <div className="mb-4 grid grid-cols-3 gap-2 text-center">
+      <div className="mb-4 grid grid-cols-3 gap-2 text-center sm:gap-3">
         <div className="card p-3">
-          <div className="text-xs text-gray-500">{t('room.stake')}</div>
+          <div className="text-xs text-slate-500">{t('room.stake')}</div>
           <div className="font-bold">{birr(game.stakeCents)}</div>
         </div>
         <div className="card p-3">
-          <div className="text-xs text-gray-500">{t('room.players')}</div>
+          <div className="text-xs text-slate-500">{t('room.players')}</div>
           <div className="font-bold">{game.players} / {game.capacity}</div>
         </div>
         <div className="card p-3">
-          <div className="text-xs text-gray-500">{t('room.prizeIfFull')}</div>
-          <div className="font-bold text-gold-400">{birr(game.prizeIfFullCents)}</div>
+          <div className="text-xs text-slate-500">{t('room.prizeIfFull')}</div>
+          <div className="font-bold text-gold-700">{birr(game.prizeIfFullCents)}</div>
         </div>
       </div>
 
       {phase === 'cancelled' && (
         <div className="card space-y-3 text-center">
           <p>{t('room.cancelled')}</p>
-          {game.cancelReason && <p className="text-sm text-gray-500">{game.cancelReason}</p>}
+          {game.cancelReason && <p className="text-sm text-slate-500">{serverText(game.cancelReason)}</p>}
           <Link href="/" className="btn-primary">{t('room.backToLobby')}</Link>
         </div>
       )}
@@ -207,16 +208,16 @@ export default function Room() {
       {phase === 'open' && (
         <>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-            <span className="text-gray-400">
+            <span className="text-slate-600">
               {game.myNumber ? (
                 <>
-                  {t('room.yourNumber')}: <b className="text-lg text-teal-300">{game.myNumber}</b> · {t('room.odds')}: 1 / {game.players}
+                  {t('room.yourNumber')}: <b className="text-lg text-teal-700">{game.myNumber}</b> · {t('room.odds')}: 1 / {game.players}
                 </>
               ) : (
                 t('room.pick')
               )}
             </span>
-            <span className="tabular-nums text-gray-400">
+            <span className="tabular-nums text-slate-600">
               {deadlineLeft != null ? `${t('room.timeLeft')}: ${timeLeft(deadlineLeft)}` : t('room.noDeadline')}
             </span>
           </div>
@@ -233,7 +234,7 @@ export default function Room() {
             </Alert>
           )}
 
-          <div className="mt-3 grid grid-cols-10 gap-1 sm:gap-1.5">
+          <div className="card mx-auto mt-3 grid max-w-xl grid-cols-10 gap-1 p-2 sm:gap-1.5 sm:p-3">
             {Array.from({ length: 100 }, (_, i) => i + 1).map((n) => {
               const mine = n === game.myNumber;
               const isTaken = taken.has(n) && !mine;
@@ -249,12 +250,12 @@ export default function Room() {
                   aria-label={`${n}${mine ? ` (${t('room.yourNumber')})` : isTaken ? ` (${t('room.taken')})` : ''}`}
                   className={`aspect-square rounded-md text-xs font-semibold tabular-nums transition sm:text-sm ${
                     mine
-                      ? 'bg-teal-500 text-ink-950 ring-2 ring-teal-200'
+                      ? 'bg-teal-600 text-white ring-2 ring-teal-300'
                       : isTaken
-                        ? 'bg-ink-800 text-gray-600 line-through'
+                        ? 'bg-slate-100 text-slate-300 line-through'
                         : disabled
-                          ? 'bg-ink-800 text-gray-400'
-                          : 'bg-ink-700 text-gray-100 hover:bg-gold-400 hover:text-ink-950'
+                          ? 'bg-slate-50 text-slate-400'
+                          : 'border border-slate-200 bg-white text-slate-800 shadow-sm hover:border-gold-400 hover:bg-gold-400 active:scale-95'
                   }`}
                 >
                   {n}
@@ -262,12 +263,12 @@ export default function Room() {
               );
             })}
           </div>
-          <div className="mt-3 flex gap-4 text-xs text-gray-500">
-            <span><span className="mr-1 inline-block h-3 w-3 rounded bg-ink-700 align-middle" />{t('room.available')}</span>
-            <span><span className="mr-1 inline-block h-3 w-3 rounded bg-ink-800 align-middle" />{t('room.taken')}</span>
-            <span><span className="mr-1 inline-block h-3 w-3 rounded bg-teal-500 align-middle" />{t('room.yourNumber')}</span>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+            <span><span className="mr-1 inline-block h-3 w-3 rounded border border-slate-300 bg-white align-middle" />{t('room.available')}</span>
+            <span><span className="mr-1 inline-block h-3 w-3 rounded bg-slate-100 align-middle" />{t('room.taken')}</span>
+            <span><span className="mr-1 inline-block h-3 w-3 rounded bg-teal-600 align-middle" />{t('room.yourNumber')}</span>
           </div>
-          {game.myNumber && <p className="mt-4 text-center text-gray-400">{t('room.waiting')}</p>}
+          {game.myNumber && <p className="mt-4 text-center text-slate-600">{t('room.waiting')}</p>}
         </>
       )}
 
@@ -278,7 +279,7 @@ export default function Room() {
           </div>
           {reduceMotion ? (
             // REQ-ANIM-07: short fade-to-result alternative.
-            phase === 'done' ? null : <p className="py-16 text-center text-gray-400 transition-opacity">{t('room.startsIn')} {Math.max(0, Math.ceil((spinStart - now) / 1000))}s</p>
+            phase === 'done' ? null : <p className="py-16 text-center text-slate-600 transition-opacity">{t('room.startsIn')} {Math.max(0, Math.ceil((spinStart - now) / 1000))}s</p>
           ) : (
             <div className="relative">
               <Spinner
@@ -292,9 +293,9 @@ export default function Room() {
                 onDone={() => setSpinDone(true)}
               />
               {phase === 'countdown' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-black/60">
-                  <div className="text-sm text-gray-300">{t('room.startsIn')}</div>
-                  <div className="text-7xl font-black tabular-nums text-gold-400">{Math.max(1, Math.ceil((spinStart - now) / 1000))}</div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-white/85 backdrop-blur-sm">
+                  <div className="text-sm text-slate-700">{t('room.startsIn')}</div>
+                  <div className="text-7xl font-black tabular-nums text-gold-700">{Math.max(1, Math.ceil((spinStart - now) / 1000))}</div>
                 </div>
               )}
             </div>
@@ -302,7 +303,7 @@ export default function Room() {
           {phase === 'done' && (
             <div className="mt-4 space-y-3 text-center motion-safe:animate-[fadeIn_.4s_ease-out]">
               {youWon ? (
-                <div className="text-3xl font-extrabold text-gold-400">{t('room.youWon', { amount: birr(game.result.prizeCents) })}</div>
+                <div className="text-2xl font-extrabold text-gold-700 sm:text-3xl">{t('room.youWon', { amount: birr(game.result.prizeCents) })}</div>
               ) : (
                 <div className="text-2xl font-bold">{t('room.numberWon', { number: game.result.winningNumber })}</div>
               )}
@@ -315,7 +316,7 @@ export default function Room() {
         </div>
       )}
 
-      <p className="mt-6 break-all text-xs text-gray-600">
+      <p className="mt-6 break-all text-xs text-slate-400">
         {t('room.fairness')} (SHA-256): {game.seedHash}
       </p>
 

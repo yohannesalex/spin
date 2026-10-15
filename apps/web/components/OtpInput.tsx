@@ -27,11 +27,11 @@ export function OtpInput({ value, onChange, phone, purpose }: { value: string; o
       />
       <div className="mt-2 text-right text-sm">
         {cooldown > 0 ? (
-          <span className="text-gray-500">{t('auth.resendIn', { s: cooldown })}</span>
+          <span className="text-slate-500">{t('auth.resendIn', { s: cooldown })}</span>
         ) : (
           <button
             type="button"
-            className="text-gold-400 hover:underline"
+            className="text-gold-700 hover:underline"
             onClick={async () => {
               setMsg(null);
               try {
@@ -45,7 +45,7 @@ export function OtpInput({ value, onChange, phone, purpose }: { value: string; o
             {t('auth.resend')}
           </button>
         )}
-        {msg && <div className="mt-1 text-red-400">{msg}</div>}
+        {msg && <div className="mt-1 text-red-600">{msg}</div>}
       </div>
     </div>
   );

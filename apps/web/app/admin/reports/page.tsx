@@ -30,7 +30,7 @@ export default function Reports() {
         </div>
         {!rec.data ? <Spinner /> : (
           <>
-            <div className="grid gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Stat label="Player wallets" value={birr(rec.data.totals.walletsCents)} />
               <Stat label="Locked (pending payouts)" value={birr(rec.data.totals.lockedCents)} />
               <Stat label="House commission" value={birr(rec.data.totals.houseCents)} tone="gold" />
@@ -42,11 +42,11 @@ export default function Reports() {
                 <tbody>
                   {rec.data.history.map((r: any) => (
                     <tr key={r.id}>
-                      <td>{r.date}<div className="text-xs text-gray-500">{dateTime(r.createdAt)}</div></td>
+                      <td>{r.date}<div className="text-xs text-slate-500">{dateTime(r.createdAt)}</div></td>
                       <td>{birr(r.telebirrCents)}</td><td>{birr(r.cbeCents)}</td>
                       <td>{birr(r.walletsCents + r.lockedCents + r.houseCents)}</td>
-                      <td className={r.differenceCents !== 0 ? 'font-bold text-red-400' : 'text-emerald-400'}>{birr(r.differenceCents, { sign: true })}</td>
-                      <td className="text-gray-400">{r.note}</td>
+                      <td className={r.differenceCents !== 0 ? 'font-bold text-red-600' : 'text-emerald-600'}>{birr(r.differenceCents, { sign: true })}</td>
+                      <td className="text-slate-600">{r.note}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -61,16 +61,16 @@ export default function Reports() {
           <h2 className="mr-2 font-semibold">Commission revenue</h2>
           <input type="date" className="input max-w-[160px]" value={from} onChange={(e) => setFrom(e.target.value)} />
           <input type="date" className="input max-w-[160px]" value={to} onChange={(e) => setTo(e.target.value)} />
-          <span className="text-sm text-gray-400">Total <b className="text-gold-400">{birr(totalC)}</b></span>
+          <span className="text-sm text-slate-600">Total <b className="text-gold-700">{birr(totalC)}</b></span>
         </div>
         <div className="card">
-          {!commission.data ? <Spinner /> : commission.data.length === 0 ? <p className="text-gray-500">No commission in this range.</p> : (
+          {!commission.data ? <Spinner /> : commission.data.length === 0 ? <p className="text-slate-500">No commission in this range.</p> : (
             <div className="space-y-1">
               {commission.data.map((d) => (
                 <div key={d.day} className="grid grid-cols-[90px_1fr_130px] items-center gap-2 text-sm">
-                  <span className="text-gray-400">{d.day}</span>
-                  <div className="h-4 rounded bg-ink-800"><div className="h-4 rounded bg-gold-400" style={{ width: `${(d.commissionCents / maxC) * 100}%` }} /></div>
-                  <span className="text-right tabular-nums">{birr(d.commissionCents)} <span className="text-xs text-gray-500">({d.games})</span></span>
+                  <span className="text-slate-600">{d.day}</span>
+                  <div className="h-4 rounded bg-slate-100"><div className="h-4 rounded bg-gold-400" style={{ width: `${(d.commissionCents / maxC) * 100}%` }} /></div>
+                  <span className="text-right tabular-nums">{birr(d.commissionCents)} <span className="text-xs text-slate-500">({d.games})</span></span>
                 </div>
               ))}
             </div>
@@ -94,7 +94,7 @@ export default function Reports() {
               <thead><tr><th>Month</th><th>Stakes</th><th>Refunds</th><th>Prizes</th><th>Gross gaming revenue</th><th>Deposits</th><th>Withdrawals</th></tr></thead>
               <tbody>
                 {tax.data.map((m) => (
-                  <tr key={m.month}><td>{m.month}</td><td>{birr(m.stakesCents)}</td><td>{birr(m.refundsCents)}</td><td>{birr(m.prizesCents)}</td><td className="font-semibold text-gold-400">{birr(m.grossGamingRevenueCents)}</td><td>{birr(m.depositsCents)}</td><td>{birr(m.withdrawalsCents)}</td></tr>
+                  <tr key={m.month}><td>{m.month}</td><td>{birr(m.stakesCents)}</td><td>{birr(m.refundsCents)}</td><td>{birr(m.prizesCents)}</td><td className="font-semibold text-gold-700">{birr(m.grossGamingRevenueCents)}</td><td>{birr(m.depositsCents)}</td><td>{birr(m.withdrawalsCents)}</td></tr>
                 ))}
               </tbody>
             </table>

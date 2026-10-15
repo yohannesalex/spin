@@ -31,7 +31,7 @@ export default function Users() {
               <tbody>
                 {data.items.map((u) => (
                   <tr key={u.id}>
-                    <td><Link className="text-gold-400 underline" href={`/admin/users/${u.id}`}>{u.fullName}</Link></td>
+                    <td><Link className="text-gold-700 underline" href={`/admin/users/${u.id}`}>{u.fullName}</Link></td>
                     <td>{u.phone}</td>
                     <td><StatusBadge status={u.status} /></td>
                     <td className="tabular-nums">{birr(u.wallet?.balanceCents ?? 0)}</td>
@@ -46,11 +46,11 @@ export default function Users() {
         </>
       )}
       <h2 className="pt-4 text-lg font-semibold">Open account flags (multi-account, shared payout accounts, auto-suspensions)</h2>
-      {!flags.data ? <Spinner /> : flags.data.length === 0 ? <p className="text-gray-500">None.</p> : (
-        <table className="table">
+      {!flags.data ? <Spinner /> : flags.data.length === 0 ? <p className="text-slate-500">None.</p> : (
+        <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"><table className="table">
           <thead><tr><th>When</th><th>User</th><th>Severity</th><th>Reason</th></tr></thead>
           <tbody>{flags.data.map((f) => <tr key={f.id}><td>{dateTime(f.createdAt)}</td><td><Link className="underline" href={`/admin/users/${f.userId}`}>{f.userId?.slice(0, 8)}</Link></td><td><StatusBadge status={f.severity} /></td><td>{f.reason}</td></tr>)}</tbody>
-        </table>
+        </table></div>
       )}
     </div>
   );

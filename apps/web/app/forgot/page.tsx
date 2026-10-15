@@ -36,8 +36,8 @@ export default function Forgot() {
         <form
           className="card space-y-4"
           onSubmit={run(async () => {
-            const r = await api<{ message: string }>('/auth/forgot', { body: { phone } });
-            setInfo(r.message);
+            await api('/auth/forgot', { body: { phone } });
+            setInfo(t('auth.forgotSent'));
             setStep('code');
           })}
         >

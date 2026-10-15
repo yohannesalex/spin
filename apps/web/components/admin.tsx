@@ -39,24 +39,28 @@ export function AdminShell({ children }: { children: ReactNode }) {
   if (loading || !ok) return <Spinner />;
   return (
     <div className="min-h-screen lg:flex">
-      <aside className="border-b border-ink-800 bg-ink-900 lg:sticky lg:top-0 lg:h-screen lg:w-56 lg:shrink-0 lg:border-b-0 lg:border-r">
+      <aside className="sticky top-0 z-30 border-b border-slate-200 bg-white lg:h-screen lg:w-56 lg:shrink-0 lg:border-b-0 lg:border-r">
         <div className="flex items-center justify-between px-4 py-4">
-          <Link href="/admin" className="font-bold">Spin Draw <span className="text-gold-400">Admin</span></Link>
+          <Link href="/admin" className="font-bold">Spin Draw <span className="text-gold-700">Admin</span></Link>
+          <div className="flex items-center gap-1 lg:hidden">
+            <Link href="/admin/alerts" className="relative rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">🔔{alerts > 0 && <span className="badge ml-1 bg-red-600 text-white">{alerts}</span>}</Link>
+            <button className="rounded-lg px-2 py-1.5 text-sm text-red-600 hover:bg-red-50" onClick={async () => { await logout(); router.push('/admin/login'); }}>Log out</button>
+          </div>
         </div>
         <nav className="flex gap-1 overflow-x-auto px-2 pb-2 lg:flex-col lg:overflow-visible">
           {NAV.map(([href, label]) => {
             const active = href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
             return (
-              <Link key={href} href={href} className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm ${active ? 'bg-ink-700 text-white' : 'text-gray-400 hover:text-white'}`}>
+              <Link key={href} href={href} className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm ${active ? 'bg-gold-100 text-gold-800' : 'text-slate-600 hover:text-slate-900'}`}>
                 {label}
               </Link>
             );
           })}
         </nav>
-        <div className="hidden space-y-2 px-4 py-4 text-xs text-gray-500 lg:block">
-          <Link href="/admin/alerts" className="block text-gray-300">🔔 Alerts {alerts > 0 && <span className="badge bg-red-600 text-white">{alerts}</span>}</Link>
+        <div className="hidden space-y-2 px-4 py-4 text-xs text-slate-500 lg:block">
+          <Link href="/admin/alerts" className="block text-slate-700">🔔 Alerts {alerts > 0 && <span className="badge bg-red-600 text-white">{alerts}</span>}</Link>
           <div>{user.fullName}</div>
-          <button className="text-red-300" onClick={async () => { await logout(); router.push('/admin/login'); }}>Log out</button>
+          <button className="text-red-600" onClick={async () => { await logout(); router.push('/admin/login'); }}>Log out</button>
         </div>
       </aside>
       <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>
@@ -168,16 +172,16 @@ export function ActionButton({
 
 export function Pager({ page, total, pageSize, onPage }: { page: number; total: number; pageSize: number; onPage: (p: number) => void }) {
   const pages = Math.max(1, Math.ceil(total / pageSize));
-  if (pages <= 1) return <div className="mt-2 text-xs text-gray-500">{total} result(s)</div>;
+  if (pages <= 1) return <div className="mt-2 text-xs text-slate-500">{total} result(s)</div>;
   return (
     <div className="mt-3 flex items-center gap-3 text-sm">
       <button className="btn-secondary btn-sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>Prev</button>
-      <span className="text-gray-500">Page {page} / {pages} · {total} results</span>
+      <span className="text-slate-500">Page {page} / {pages} · {total} results</span>
       <button className="btn-secondary btn-sm" disabled={page >= pages} onClick={() => onPage(page + 1)}>Next</button>
     </div>
   );
 }
 
 export function JsonBlock({ value }: { value: unknown }) {
-  return <pre className="max-h-80 overflow-auto rounded-lg bg-ink-950 p-3 text-xs text-gray-300">{JSON.stringify(value, null, 2)}</pre>;
+  return <pre className="max-h-80 overflow-auto rounded-lg bg-slate-50 p-3 text-xs text-slate-700">{JSON.stringify(value, null, 2)}</pre>;
 }

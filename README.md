@@ -76,7 +76,7 @@ The raw receipt, the parsed fields and the uploaded image are stored for every d
 |---|---|
 | Roles, admin 2FA, permission map for future roles (REQ-ROLE-*) | `common/permissions.ts`, `common/auth.guard.ts`, `auth/auth.service.ts` |
 | Registration, OTP rules, lockout, sessions, reset (REQ-AUTH-*) | `auth/*` |
-| Swappable SMS sender (REQ-AUTH-09) | `notifications/sms.provider.ts` (Console, AfroMessage) |
+| Swappable SMS sender (REQ-AUTH-09) | `notifications/sms.provider.ts` (Console, AfroMessage, SMS Gateway for Android) |
 | Ledger, wallet, holds (REQ-WAL-*, REQ-PAY-04) | `wallet/wallet.service.ts` |
 | Deposits and verification (REQ-DEP-*) | `deposits/*`, `deposits/verification/*` |
 | Auto-suspend after 3 high-severity flags in 30 days (REQ-DEP-07) | `flags/flags.service.ts` |
@@ -93,7 +93,7 @@ The raw receipt, the parsed fields and the uploaded image are stored for every d
 
 - **Receipt fetching from Ethiopia (REQ-DEP-03).** The Telebirr receipt server times out from foreign IPs (confirmed during development). Either run the API on an Ethiopian VPS, or set `RECEIPT_RELAY_URL` to a relay inside Ethiopia that proxies `GET ?url=…`.
 - **Real receipt samples (REQ-DEP-04).** The parsers follow the field labels used by the open-source `telebirr-receipt` and `@jvhaile/cbe-verifier` packages. The fixtures in `deposits/verification/__fixtures__` are synthetic. Add anonymised real Telebirr HTML and CBE PDF receipts and extend `parsers.spec.ts`.
-- **SMS.** Set `SMS_PROVIDER=afromessage` and the `AFROMESSAGE_*` variables.
+- **SMS.** Set `SMS_PROVIDER=afromessage` and the `AFROMESSAGE_*` variables, or `SMS_PROVIDER=smsgate` and the `SMSGATE_*` variables to send from an Android phone's SIM via [SMS Gateway for Android](https://sms-gate.app).
 - **Amharic text.** Have a native speaker review the Amharic strings in `web/lib/i18n.tsx` and `api/src/notifications/messages.ts`.
 - **Production settings:** `COOKIE_SECURE=true`, HTTPS behind Cloudflare, and `WEB_ORIGIN` set to the real domain. Optionally add `TURNSTILE_SECRET` (bot protection on registration) and `TELEGRAM_*` (admin alerts).
 - **File storage.** `StorageService` writes to local disk outside the web root. Replace it with an S3/R2 implementation if you run more than one API instance.

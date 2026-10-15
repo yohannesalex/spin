@@ -5,7 +5,8 @@ import { RequireLogin } from '@/components/RequireLogin';
 import { Spinner, Stat, StatusBadge } from '@/components/ui';
 import { birr, dateTime } from '@/lib/format';
 import { useApi } from '@/lib/hooks';
-import { useI18n } from '@/lib/i18n';
+import { Key, useI18n } from '@/lib/i18n';
+import { serverText } from '@/lib/locale';
 
 interface Summary {
   balanceCents: number;
@@ -33,8 +34,8 @@ function WalletInner() {
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-6">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Stat label={t('wallet.balance')} value={birr(data.balanceCents)} tone="gold" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="col-span-2 sm:col-span-1"><Stat label={t('wallet.balance')} value={birr(data.balanceCents)} tone="gold" /></div>
         <Stat label={t('wallet.withdrawable')} value={birr(data.withdrawableCents)} />
         <Stat label={t('wallet.locked')} value={birr(data.lockedCents)} />
       </div>
@@ -49,7 +50,7 @@ function WalletInner() {
             <h3 className="mb-2 font-semibold">{t('wallet.pendingDeposits')}</h3>
             {data.pendingDeposits.map((d) => (
               <div key={d.id} className="flex justify-between py-1 text-sm">
-                <span>{birr(d.claimedAmountCents)} · {d.provider}</span>
+                <span>{birr(d.claimedAmountCents)} · {t(`provider.${d.provider}` as Key)}</span>
                 <StatusBadge status={d.status} />
               </div>
             ))}
@@ -58,7 +59,7 @@ function WalletInner() {
             <h3 className="mb-2 font-semibold">{t('wallet.pendingWithdrawals')}</h3>
             {data.pendingWithdrawals.map((w) => (
               <div key={w.id} className="flex justify-between py-1 text-sm">
-                <span>{birr(w.amountCents)} · {w.method}</span>
+                <span>{birr(w.amountCents)} · {t(`provider.${w.method}` as Key)}</span>
                 <StatusBadge status={w.status} />
               </div>
             ))}
@@ -68,10 +69,10 @@ function WalletInner() {
 
       <div className="card">
         <h3 className="mb-3 font-semibold">{t('wallet.history')}</h3>
-        <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <select className="input" value={type} onChange={(e) => { setType(e.target.value); setPage(1); }}>
+        <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <select className="input col-span-2 sm:col-span-1" value={type} onChange={(e) => { setType(e.target.value); setPage(1); }}>
             <option value="">{t('wallet.allTypes')}</option>
-            {TYPES.map((x) => <option key={x} value={x}>{x.replace(/_/g, ' ').toLowerCase()}</option>)}
+            {TYPES.map((x) => <option key={x} value={x}>{t(`ledger.${x}` as Key)}</option>)}
           </select>
           <input className="input" type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} aria-label={t('wallet.from')} />
           <input className="input" type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(1); }} aria-label={t('wallet.to')} />
@@ -79,20 +80,20 @@ function WalletInner() {
         {!history.data ? (
           <Spinner />
         ) : history.data.items.length === 0 ? (
-          <p className="text-gray-500">{t('wallet.empty')}</p>
+          <p className="text-slate-500">{t('wallet.empty')}</p>
         ) : (
-          <ul className="divide-y divide-ink-800">
+          <ul className="divide-y divide-slate-100">
             {history.data.items.map((e) => (
               <li key={e.id} className="flex items-center justify-between gap-2 py-2 text-sm">
                 <div>
-                  <div className="font-medium">{e.type.replace(/_/g, ' ').toLowerCase()}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="font-medium">{t(`ledger.${e.type}` as Key)}</div>
+                  <div className="text-xs text-slate-500">
                     {dateTime(e.createdAt)}
-                    {e.note && ` · ${e.note}`}
-                    {e.refType === 'game' && <> · <Link className="underline" href={`/room/${e.refId}`}>game</Link></>}
+                    {e.note && ` · ${serverText(e.note)}`}
+                    {e.refType === 'game' && <> · <Link className="underline" href={`/room/${e.refId}`}>{t('wallet.game')}</Link></>}
                   </div>
                 </div>
-                <div className={`font-semibold tabular-nums ${e.amountCents >= 0 ? 'text-emerald-400' : 'text-gray-300'}`}>{birr(e.amountCents, { sign: true })}</div>
+                <div className={`font-semibold tabular-nums ${e.amountCents >= 0 ? 'text-emerald-600' : 'text-slate-700'}`}>{birr(e.amountCents, { sign: true })}</div>
               </li>
             ))}
           </ul>
@@ -100,7 +101,7 @@ function WalletInner() {
         {pages > 1 && (
           <div className="mt-3 flex items-center justify-between text-sm">
             <button className="btn-secondary btn-sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>{t('common.prev')}</button>
-            <span className="text-gray-500">{page} / {pages}</span>
+            <span className="text-slate-500">{page} / {pages}</span>
             <button className="btn-secondary btn-sm" disabled={page >= pages} onClick={() => setPage(page + 1)}>{t('common.next')}</button>
           </div>
         )}

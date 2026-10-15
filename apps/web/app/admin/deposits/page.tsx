@@ -23,13 +23,13 @@ export interface AdminDeposit {
 function Row({ d }: { d: AdminDeposit }) {
   return (
     <tr>
-      <td><Link className="text-gold-400 underline" href={`/admin/deposits/${d.id}`}>{dateTime(d.createdAt)}</Link></td>
-      <td><Link className="underline" href={`/admin/users/${d.user.id}`}>{d.user.fullName}</Link><div className="text-xs text-gray-500">{d.user.phone}</div></td>
+      <td><Link className="text-gold-700 underline" href={`/admin/deposits/${d.id}`}>{dateTime(d.createdAt)}</Link></td>
+      <td><Link className="underline" href={`/admin/users/${d.user.id}`}>{d.user.fullName}</Link><div className="text-xs text-slate-500">{d.user.phone}</div></td>
       <td>{d.provider}</td>
       <td className="font-mono text-xs">{d.reference ?? '—'}</td>
       <td className="tabular-nums">{birr(d.claimedAmountCents)}</td>
       <td><StatusBadge status={d.status} /> {d.highestSeverity && <StatusBadge status={d.highestSeverity} />}</td>
-      <td className="text-xs text-amber-200">{(d.flagLabels ?? d.flagReasons).join(', ')}</td>
+      <td className="text-xs text-amber-800">{(d.flagLabels ?? d.flagReasons).join(', ')}</td>
     </tr>
   );
 }
@@ -61,7 +61,7 @@ export default function Deposits() {
         <button className={tab === 'all' ? 'btn-primary btn-sm' : 'btn-secondary btn-sm'} onClick={() => setTab('all')}>All deposits</button>
       </div>
       {tab === 'flagged' ? (
-        !flagged.data ? <Spinner /> : flagged.data.length === 0 ? <p className="text-gray-500">Nothing to review. 🎉</p> : <Table items={flagged.data} />
+        !flagged.data ? <Spinner /> : flagged.data.length === 0 ? <p className="text-slate-500">Nothing to review. 🎉</p> : <Table items={flagged.data} />
       ) : (
         <>
           <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">

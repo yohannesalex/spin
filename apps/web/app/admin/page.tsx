@@ -17,15 +17,15 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <div className="flex rounded-xl border border-ink-700 p-1 text-sm">
+        <div className="flex rounded-xl border border-slate-200 p-1 text-sm">
           {(['today', 'last7', 'last30'] as const).map((k) => (
-            <button key={k} onClick={() => setPeriod(k)} className={`rounded-lg px-3 py-1 ${period === k ? 'bg-gold-400 text-ink-950' : 'text-gray-300'}`}>
+            <button key={k} onClick={() => setPeriod(k)} className={`rounded-lg px-3 py-1 ${period === k ? 'bg-gold-400 text-slate-900' : 'text-slate-700'}`}>
               {k === 'today' ? 'Today' : k === 'last7' ? '7 days' : '30 days'}
             </button>
           ))}
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Stat label="Deposits" value={birr(p.depositsCents)} sub={`${p.depositsCount} credited`} />
         <Stat label="Withdrawals paid" value={birr(p.withdrawalsCents)} sub={`${p.withdrawalsCount} paid`} />
         <Stat label="Stakes" value={birr(p.stakesCents)} />
@@ -35,7 +35,7 @@ export default function Dashboard() {
         <Stat label="Open rooms" value={data.openRooms} />
       </div>
       <h2 className="text-lg font-semibold">Needs attention</h2>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Link href="/admin/deposits"><Stat label="Open flags" value={data.pendingFlags} sub={`${data.pendingHighFlags} high severity`} tone={data.pendingHighFlags ? 'red' : undefined} /></Link>
         <Link href="/admin/payouts"><Stat label="Pending payouts" value={data.pendingPayouts.count} sub={birr(data.pendingPayouts.cents)} /></Link>
         <Link href="/admin/payouts"><Stat label="Payouts > 24h" value={data.pendingPayouts.overdue} tone={data.pendingPayouts.overdue ? 'red' : 'green'} /></Link>
