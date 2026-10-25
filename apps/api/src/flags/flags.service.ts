@@ -16,9 +16,15 @@ export class FlagsService {
     const flag = await db.flag.create({ data: { ...input, userId: input.userId ?? null } });
     if (input.severity === 'HIGH') {
       // REQ-NOT-01: admins are alerted about new high-severity flags.
+      const href =
+        input.subjectType === 'DEPOSIT' ? `/admin/deposits/${input.subjectId}`
+        : input.subjectType === 'WITHDRAWAL' ? '/admin/payouts'
+        : `/admin/users/${input.userId ?? input.subjectId}`;
       this.notifications
-        .alertAdmins('High-severity flag', `${input.reason} (${input.subjectType.toLowerCase()} ${input.subjectId.slice(0, 8)})`, {
-          flagId: flag.id,
+        .alertAdmins('High-severity flag', `${input.reason} — ${input.subjectType.toLowerCase()} ${input.subjectId.slice(0, 8)}`, {
+          href,
+          dedupeKey: `flag:${input.subjectType}:${input.subjectId}`,
+          data: { flagId: flag.id },
         })
         .catch((e) => this.log.error(e.message));
       if (input.userId) await this.autoSuspend(input.userId, db);

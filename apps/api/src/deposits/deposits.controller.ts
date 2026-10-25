@@ -1,10 +1,8 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { AllowRestricted, AuthUser, CurrentUser, PlayerOnly, Public } from '../common/auth.decorators';
 import { Idempotent } from '../common/idempotency.interceptor';
 import { DepositsService } from './deposits.service';
-import { SubmitDepositDto } from './dto';
+import { SimulateDepositDto, SubmitDepositDto } from './dto';
 
 @Controller('deposits')
 export class DepositsController {
@@ -16,9 +14,14 @@ export class DepositsController {
   }
 
   @Post() @PlayerOnly() @Idempotent()
-  @UseInterceptors(FileInterceptor('receipt', { storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } }))
-  submit(@CurrentUser() user: AuthUser, @Body() dto: SubmitDepositDto, @UploadedFile() file?: Express.Multer.File) {
-    return this.deposits.submit(user.id, dto, file);
+  submit(@CurrentUser() user: AuthUser, @Body() dto: SubmitDepositDto) {
+    return this.deposits.submit(user.id, dto);
+  }
+
+  /** TESTING ONLY — 403 unless DEPOSIT_SIMULATION=true. */
+  @Post('simulate') @PlayerOnly() @Idempotent()
+  simulate(@CurrentUser() user: AuthUser, @Body() dto: SimulateDepositDto) {
+    return this.deposits.simulate(user.id, dto);
   }
 
   @Get() @PlayerOnly() @AllowRestricted()

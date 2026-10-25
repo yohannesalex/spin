@@ -62,7 +62,7 @@ export default function Forgot() {
           <Field label={t('auth.newPassword')} hint={t('auth.passwordHint')}>
             <input className="input" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
           </Field>
-          <button className="btn-primary w-full" disabled={busy || code.length !== 6}>{t('auth.resetTitle')}</button>
+          <button className="btn-primary w-full" disabled={busy || code.length < 4}>{t('auth.resetTitle')}</button>
         </form>
       )}
       {step === 'done' && (

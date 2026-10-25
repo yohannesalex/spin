@@ -11,6 +11,14 @@ async function bootstrap() {
   if (!process.env.JWT_ACCESS_SECRET || process.env.JWT_ACCESS_SECRET.length < 32) {
     throw new Error('JWT_ACCESS_SECRET must be set (≥ 32 chars)');
   }
+  if (process.env.OTP_FIXED_CODE) {
+    if (process.env.NODE_ENV === 'production') throw new Error('OTP_FIXED_CODE must not be set in production');
+    new Logger('Bootstrap').warn(`OTP_FIXED_CODE is set: every OTP is "${process.env.OTP_FIXED_CODE}" and no SMS is sent`);
+  }
+  if (process.env.DEPOSIT_SIMULATION === 'true') {
+    if (process.env.NODE_ENV === 'production') throw new Error('DEPOSIT_SIMULATION must not be set in production');
+    new Logger('Bootstrap').warn('DEPOSIT_SIMULATION is on: players can credit fake payments with "Simulate payment"');
+  }
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set('trust proxy', 1); // behind Cloudflare / Next.js proxy
   app.setGlobalPrefix('api');
@@ -19,7 +27,7 @@ async function bootstrap() {
   app.use(cookieParser());
   app.enableCors({ origin: (process.env.WEB_ORIGIN || 'http://localhost:3000').split(','), credentials: true });
   // REQ-SEC-03: input validation on every endpoint.
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true, stopAtFirstError: true }));
   if (process.env.REDIS_URL) {
     const adapter = new RedisIoAdapter(app);
     await adapter.connect(process.env.REDIS_URL);

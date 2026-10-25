@@ -14,6 +14,13 @@ export const OTP_RULES = {
   perIpHour: 20,
 };
 
+/**
+ * TEMPORARY (pre-launch): when OTP_FIXED_CODE is set, every OTP — registration, password reset
+ * and admin 2FA, for every phone — is that code, no SMS is sent, and resend limits are skipped.
+ * Remove OTP_FIXED_CODE before going live; the API refuses to start with it in production.
+ */
+export const FIXED_OTP = process.env.OTP_FIXED_CODE?.trim() || null;
+
 @Injectable()
 export class OtpService {
   constructor(private prisma: PrismaService, private notifications: NotificationsService) {}
@@ -25,6 +32,13 @@ export class OtpService {
 
   async issue(phone: string, purpose: OtpPurpose, ip: string | null, language: 'en' | 'am' = 'en'): Promise<void> {
     const now = Date.now();
+    if (FIXED_OTP) {
+      await this.prisma.otpCode.updateMany({ where: { phone, purpose, usedAt: null, voidedAt: null }, data: { voidedAt: new Date() } });
+      await this.prisma.otpCode.create({
+        data: { phone, purpose, ip, codeHash: this.hash(phone, purpose, FIXED_OTP), expiresAt: new Date(now + OTP_RULES.validityMs) },
+      });
+      return;
+    }
     const hourAgo = new Date(now - 3600_000);
     const dayAgo = new Date(now - 86400_000);
     const [last, phoneHour, phoneDay, ipHour] = await Promise.all([

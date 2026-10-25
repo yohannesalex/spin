@@ -1,0 +1,70 @@
+{
+  "id": "FT26291TEST1",
+  "transactionType": "ACNX",
+  "debitAccountNo": "1********1234",
+  "currencyMktDr": "1",
+  "debitCurrency": "ETB",
+  "debitAmount": "10.00",
+  "debitValueDate": "20261018",
+  "debitTheirRef": "MB Transfer",
+  "creditTheirRef": "MB Transfer",
+  "creditAccountNo": "1********0001",
+  "creditCurrency": "ETB",
+  "creditValueDate": "20261018",
+  "processingDate": "20261018",
+  "paymentDetails": [
+    "MB Transfer"
+  ],
+  "chargeComDisplay": "NO",
+  "commissionCode": "Debit Plus Charges",
+  "commissionTypes": [
+    {
+      "commissionType": "COMFTMB",
+      "commissionAmt": "ETB0.50"
+    },
+    {
+      "commissionType": "DISASRECOV",
+      "commissionAmt": "ETB0.03"
+    }
+  ],
+  "chargeCode": "WAIVE",
+  "positionType": "TR",
+  "taxTypes": [
+    {
+      "taxType": "15",
+      "taxAmt": "ETB0.08"
+    }
+  ],
+  "amountDebitedWithCurrency": "ETB10.61",
+  "amountCreditedWithCurrency": "ETB10.00",
+  "totalChargeAmountWithCurrency": "ETB0.61",
+  "totalTaxAmountWithCurrency": "ETB0.08",
+  "amountDebited": "10.61",
+  "amountCredited": "10.00",
+  "totalChargeAmount": "0.61",
+  "totalTaxAmount": "0.08",
+  "totRecComm": "0",
+  "totRecCommLcl": "0",
+  "totRecChg": "0",
+  "totRecChgLcl": "0",
+  "rateFixing": "NO",
+  "authDate": "20261018",
+  "roundType": "NATURAL",
+  "currNo": "1",
+  "dateTimes": [
+    "2026-10-18T12:54:00Z"
+  ],
+  "creditAccountHolder": "SPIN DRAW PLC",
+  "debitAccountHolder": "ABEBE KEBEDE TESFAYE",
+  "encodedReceipt": "https://mbreciept.cbe.com.et/v2-EXAMPLEcode123",
+  "isPlatformTransaction": true,
+  "channel": "ANDROID",
+  "platformTransactionType": "A2A",
+  "isOtherBank": false,
+  "description": "MB Transfer",
+  "serviceChargeValue": "ETB 0.50",
+  "vatValue": "ETB 0.08",
+  "drCharge": "ETB 0.03",
+  "chargeDescription": "Service charge of ETB 0.50 and VAT(15%) of ETB 0.08 and Disaster Recovery(5%) of ETB 0.03 with total charge of ETB 0.61.",
+  "status": "COMPLETED"
+}

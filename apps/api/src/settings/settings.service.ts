@@ -31,7 +31,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultCommissionBps: 2000,
   minStakeCents: 1000,
   maxStakeCents: 100000,
-  minDepositCents: 5000,
+  minDepositCents: 100, // 1 birr
   maxDepositCents: 5000000,
   dailyDepositLimitCents: 10000000,
   depositDateWindowHours: 24,

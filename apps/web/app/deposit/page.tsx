@@ -1,5 +1,5 @@
 'use client';
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { RequireLogin } from '@/components/RequireLogin';
 import { Alert, Field, Spinner, StatusBadge } from '@/components/ui';
 import { api, newIdempotencyKey } from '@/lib/api';
@@ -8,7 +8,7 @@ import { useApi } from '@/lib/hooks';
 import { Key, useI18n } from '@/lib/i18n';
 import { serverText } from '@/lib/locale';
 
-interface Info { accounts: { provider: 'TELEBIRR' | 'CBE'; accountNumber: string; accountName: string }[]; minDepositCents: number; maxDepositCents: number }
+interface Info { accounts: { provider: 'TELEBIRR' | 'CBE'; accountNumber: string; accountName: string }[]; minDepositCents: number; maxDepositCents: number; simulation?: boolean }
 interface Dep { id: string; provider: string; claimedAmountCents: number; creditedCents: number | null; status: string; flagReasons: string[]; createdAt: string; reference: string | null }
 
 function DepositInner() {
@@ -18,12 +18,10 @@ function DepositInner() {
   const [provider, setProvider] = useState<'TELEBIRR' | 'CBE'>('TELEBIRR');
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
-  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [current, setCurrent] = useState<Dep | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const reloadList = list.reload;
 
   // Poll the submitted deposit: Verifying → Credited / Under review.
@@ -46,20 +44,34 @@ function DepositInner() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!file && !reference.trim()) return setError(t('deposit.needReceipt'));
+    if (!reference.trim()) return setError(t('deposit.needReceipt'));
     setBusy(true);
     try {
-      const fd = new FormData();
-      fd.set('provider', provider);
-      fd.set('amount', amount);
-      if (reference.trim()) fd.set('reference', reference.trim());
-      if (file) fd.set('receipt', file);
-      const d = await api<Dep>('/deposits', { body: fd, idempotencyKey: newIdempotencyKey() });
+      const d = await api<Dep>('/deposits', {
+        body: { provider, amount: Number(amount), reference: reference.trim() },
+        idempotencyKey: newIdempotencyKey(),
+      });
       setCurrent(d);
       setAmount('');
       setReference('');
-      setFile(null);
-      if (fileRef.current) fileRef.current.value = '';
+      list.reload();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // TESTING ONLY: shown when the API runs with DEPOSIT_SIMULATION=true.
+  const simulate = async () => {
+    setError(null);
+    if (!(Number(amount) >= 1)) return setError(t('deposit.simulateNeedAmount'));
+    setBusy(true);
+    try {
+      const d = await api<Dep>('/deposits/simulate', { body: { provider, amount: Number(amount) }, idempotencyKey: newIdempotencyKey() });
+      setCurrent(d);
+      setAmount('');
+      setReference('');
       list.reload();
     } catch (err) {
       setError((err as Error).message);
@@ -107,18 +119,16 @@ function DepositInner() {
         <Field label={t('deposit.amount')}>
           <input className="input" type="number" inputMode="decimal" step="0.01" min="1" required value={amount} onChange={(e) => setAmount(e.target.value)} />
         </Field>
-        <Field label={t('deposit.receipt')} hint={t('deposit.fileHint')}>
-          {/* The browser's own file button can't be translated, so it is hidden behind ours (the Field label opens it). */}
-          <input ref={fileRef} className="sr-only" type="file" accept="image/jpeg,image/png" capture="environment" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          <span className="input flex cursor-pointer items-center gap-3">
-            <span className="shrink-0 rounded-lg bg-slate-100 px-3 py-1 text-sm font-medium text-slate-800">{t('deposit.chooseFile')}</span>
-            <span className="truncate text-sm text-slate-500">{file?.name ?? t('deposit.noFile')}</span>
-          </span>
-        </Field>
-        <Field label={t('deposit.orPaste')}>
-          <input className="input" value={reference} onChange={(e) => setReference(e.target.value)} placeholder={provider === 'TELEBIRR' ? 'https://transactioninfo.ethiotelecom.et/receipt/…' : 'FT…'} />
+        <Field label={t('deposit.orPaste')} hint={t('deposit.linkHint')}>
+          <input className="input" required value={reference} onChange={(e) => setReference(e.target.value)} placeholder={provider === 'TELEBIRR' ? 'https://transactioninfo.ethiotelecom.et/receipt/…' : 'https://mbreciept.cbe.com.et/… or FT…'} />
         </Field>
         <button className="btn-primary w-full" disabled={busy || accounts.length === 0}>{t('deposit.submit')}</button>
+        {info.data.simulation && (
+          <div className="space-y-2 rounded-xl border border-dashed border-amber-400 bg-amber-50 p-3">
+            <p className="text-xs text-amber-800">{t('deposit.simulateHint')}</p>
+            <button type="button" className="btn-secondary w-full" disabled={busy} onClick={simulate}>{t('deposit.simulate')}</button>
+          </div>
+        )}
       </form>
 
       {current && (

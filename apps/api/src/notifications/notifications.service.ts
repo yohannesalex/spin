@@ -36,11 +36,23 @@ export class NotificationsService {
     await this.smsProvider.sendOtp(phone, code, message).catch((e) => this.log.error(`OTP SMS failed, code is in the log above: ${e.message}`));
   }
 
-  /** REQ-NOT-01: admin alerts go to every admin's in-app inbox and optionally to Telegram. */
-  async alertAdmins(title: string, body: string, data?: object) {
+  /**
+   * REQ-NOT-01: admin alerts go to every admin's in-app inbox and optionally to Telegram.
+   * `href` is the admin page the alert is about. With `dedupeKey`, no new alert is created
+   * while an unread one with the same key is still waiting.
+   */
+  async alertAdmins(title: string, body: string, opts: { href?: string; dedupeKey?: string; data?: object } = {}) {
+    if (opts.dedupeKey) {
+      const pending = await this.prisma.notification.findFirst({
+        where: { kind: 'admin_alert', readAt: null, data: { path: ['dedupeKey'], equals: opts.dedupeKey } },
+        select: { id: true },
+      });
+      if (pending) return;
+    }
+    const data = { ...opts.data, href: opts.href, dedupeKey: opts.dedupeKey } as Prisma.InputJsonValue;
     const admins = await this.prisma.user.findMany({ where: { role: 'ADMIN', disabled: false }, select: { id: true } });
     await this.prisma.notification.createMany({
-      data: admins.map((a) => ({ userId: a.id, kind: 'admin_alert', title, body, data: data as Prisma.InputJsonValue })),
+      data: admins.map((a) => ({ userId: a.id, kind: 'admin_alert', title, body, data })),
     });
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chat = process.env.TELEGRAM_ADMIN_CHAT_ID;

@@ -1,4 +1,4 @@
-import { Equals, IsIn, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from 'class-validator';
+import { Equals, IsIn, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 // REQ-AUTH-02: min 8 characters, at least one letter and one digit.
 const PASSWORD_RE = /^(?=.*[A-Za-z])(?=.*\d).{8,128}$/;
@@ -16,7 +16,7 @@ export class RegisterDto {
 
 export class PhoneCodeDto {
   @IsString() @MaxLength(20) phone: string;
-  @IsString() @Length(6, 6) code: string;
+  @IsString() @Matches(/^\d{4,6}$/, { message: 'Enter the code' }) code: string;
 }
 
 export class PhoneDto {
@@ -35,12 +35,12 @@ export class LoginDto {
 
 export class AdminTwoFactorDto {
   @IsString() challenge: string;
-  @IsString() @Length(6, 6) code: string;
+  @IsString() @Matches(/^\d{4,6}$/, { message: 'Enter the code' }) code: string;
 }
 
 export class ResetPasswordDto {
   @IsString() @MaxLength(20) phone: string;
-  @IsString() @Length(6, 6) code: string;
+  @IsString() @Matches(/^\d{4,6}$/, { message: 'Enter the code' }) code: string;
   @Matches(PASSWORD_RE, { message: PASSWORD_MSG }) password: string;
 }
 

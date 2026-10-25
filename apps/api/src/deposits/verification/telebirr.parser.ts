@@ -11,13 +11,14 @@ const LABELS = {
   status: 'የክፍያውሁኔታ/transactionstatus',
   bankAccount: 'የባንክአካውንትቁጥር/bankaccountnumber',
   receiptNo: 'የክፍያቁጥር/receiptno.',
+  invoiceNo: 'የክፍያቁጥር/invoiceno.', // label used on live receipts (Oct 2026)
   date: 'የክፍያቀን/paymentdate',
   settledAmount: 'የተከፈለውመጠን/settledamount',
   totalPaid: 'ጠቅላላየተክፈለ/totalamountpaid',
 };
 // The receipt no / date / settled amount are column headers of a 3-column table, so their
 // value is in the row below: 3 cells further on.
-const HEADER_LABELS = new Set([LABELS.receiptNo, LABELS.date, LABELS.settledAmount]);
+const HEADER_LABELS = new Set([LABELS.receiptNo, LABELS.invoiceNo, LABELS.date, LABELS.settledAmount]);
 
 const norm = (s: string) => s.replace(/\s+/g, '').toLowerCase();
 
@@ -50,7 +51,7 @@ export function parseTelebirrHtml(html: string): ParsedReceipt {
     receiverName = receiverName ?? clean(found.bankAccount.replace(/^[\d*\s]+/, ''));
   }
   return {
-    reference: clean(found.receiptNo),
+    reference: clean(found.receiptNo ?? found.invoiceNo),
     payerName: clean(found.payerName),
     payerAccount: clean(found.payerPhone),
     receiverName: clean(receiverName),

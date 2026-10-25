@@ -78,7 +78,25 @@ export function nameSimilarity(a: string, b: string): number {
   const sorted = ratio([...tx].sort().join(' '), [...ty].sort().join(' '));
   const n = Math.min(tx.length, ty.length);
   const prefix = n >= 2 ? ratio(tx.slice(0, n).join(' '), ty.slice(0, n).join(' ')) : 0;
-  return Math.max(ratio(x, y), sorted, prefix);
+  return Math.max(ratio(x, y), sorted, prefix, orderedSubset(tx, ty));
+}
+
+/**
+ * People often register with fewer names than their bank shows ("Yohannes Abdi" vs
+ * "Yohannes Alemayehu Abdi"). If every token of the shorter name (at least two, first name
+ * included) fuzzy-matches a token of the longer name in the same order, score the average.
+ */
+function orderedSubset(a: string[], b: string[]): number {
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  if (short.length < 2 || ratio(short[0], long[0]) < 0.85) return 0;
+  let j = 0;
+  let total = 0;
+  for (const tok of short) {
+    while (j < long.length && ratio(tok, long[j]) < 0.85) j++;
+    if (j === long.length) return 0;
+    total += ratio(tok, long[j++]);
+  }
+  return total / short.length;
 }
 
 // ---------- account matching (receipts mask digits: 1****5678, 2519****1234) ----------

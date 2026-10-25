@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useI18n } from '@/lib/i18n';
 
-/** 6-digit code field with the 60-second resend cooldown from §3.2. */
+/** OTP code field (4–6 digits) with the 60-second resend cooldown from §3.2. */
 export function OtpInput({ value, onChange, phone, purpose }: { value: string; onChange: (v: string) => void; phone: string; purpose: 'REGISTER' | 'RESET' }) {
   const { t } = useI18n();
   const [cooldown, setCooldown] = useState(60);

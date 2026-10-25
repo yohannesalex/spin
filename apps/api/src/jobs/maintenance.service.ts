@@ -28,20 +28,24 @@ export class MaintenanceService {
     if (stale.length) this.log.log(`Deleted ${stale.length} unverified accounts`);
   }
 
-  /** REQ-NOT-01: alert admins about withdrawals waiting more than 12 hours. */
+  /**
+   * REQ-NOT-01: alert admins about withdrawals waiting more than 12 hours — once per
+   * withdrawal, when it crosses the 12-hour mark (this job runs hourly).
+   */
   @Cron(CronExpression.EVERY_HOUR)
   async staleWithdrawals() {
-    const old = await this.prisma.withdrawal.aggregate({
-      where: { status: 'PENDING', createdAt: { lt: new Date(Date.now() - 12 * 3600_000) } },
-      _count: true,
-      _sum: { amountCents: true },
+    const now = Date.now();
+    const crossed = await this.prisma.withdrawal.findMany({
+      where: { status: 'PENDING', createdAt: { lt: new Date(now - 12 * 3600_000), gte: new Date(now - 13 * 3600_000) } },
+      select: { id: true, amountCents: true },
     });
-    if (old._count > 0) {
-      await this.notifications.alertAdmins(
-        'Withdrawals waiting > 12h',
-        `${old._count} withdrawal(s), ${(Number(old._sum.amountCents ?? 0) / 100).toFixed(2)} birr, have waited more than 12 hours.`,
-      );
-    }
+    if (crossed.length === 0) return;
+    const total = crossed.reduce((s, w) => s + w.amountCents, 0);
+    await this.notifications.alertAdmins(
+      'Withdrawals waiting > 12h',
+      `${crossed.length} withdrawal(s), ${(total / 100).toFixed(2)} birr, have now waited more than 12 hours.`,
+      { href: '/admin/payouts', data: { withdrawalIds: crossed.map((w) => w.id) } },
+    );
   }
 
   /** REQ-SEC-05: flag accounts sharing a device fingerprint or IP (last 30 days). */

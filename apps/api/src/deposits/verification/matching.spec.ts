@@ -58,10 +58,16 @@ describe('helpers', () => {
     expect(nameSimilarity('Abebe Kebde', 'Abebe Kebede')).toBeGreaterThanOrEqual(0.85);
     expect(nameSimilarity('Kebede Abebe', 'Abebe Kebede')).toBe(1);
     expect(nameSimilarity('Hana Girma', 'Abebe Kebede')).toBeLessThan(0.85);
+    // registered without the father's name
+    expect(nameSimilarity('Yohannes Alemayehu Abdi', 'Yohannes Abdi')).toBeGreaterThanOrEqual(0.85);
+    // same first name only is not enough
+    expect(nameSimilarity('Yohannes Alemayehu Abdi', 'Yohannes Girma')).toBeLessThan(0.85);
+    expect(nameSimilarity('Yohannes Alemayehu Abdi', 'Abdi Yohannes Tesfaye')).toBeLessThan(0.85);
   });
 
   it('matches masked accounts', () => {
     expect(maskedAccountMatches('1****0001', '1000000000001')).toBe(true);
+    expect(maskedAccountMatches('1********8905', '1000474528905')).toBe(true); // CBE short-link format
     expect(maskedAccountMatches('2519****5678', '+251912345678')).toBe(true);
     expect(maskedAccountMatches('09****5678', '+251912345678')).toBe(true);
     expect(maskedAccountMatches('1****0002', '1000000000001')).toBe(false);

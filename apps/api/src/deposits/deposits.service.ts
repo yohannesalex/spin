@@ -1,8 +1,8 @@
 import { InjectQueue } from '@nestjs/bullmq';
-import { BadRequestException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Deposit, Prisma, Provider } from '@prisma/client';
+import { randomBytes } from 'crypto';
 import { Queue } from 'bullmq';
-import sharp from 'sharp';
 import { birrToCents, formatBirr } from '../common/money';
 import { PrismaService } from '../common/prisma.service';
 import { FlagsService } from '../flags/flags.service';
@@ -11,16 +11,18 @@ import { SettingsService } from '../settings/settings.service';
 import { StorageService } from '../storage/storage.service';
 import { WalletService } from '../wallet/wallet.service';
 import { DEPOSIT_JOB_OPTS, DEPOSIT_QUEUE } from './deposits.queue';
-import { SubmitDepositDto } from './dto';
-import { parseCbePdf } from './verification/cbe.parser';
-import { fetchReceipt, FetchedReceipt, ProviderUnavailableError, ReceiptNotFoundError } from './verification/fetcher';
+import { SimulateDepositDto, SubmitDepositDto } from './dto';
+import { CbeReceiptJson, parseCbeJson, parseCbePdf } from './verification/cbe.parser';
+import { fetchCbeShortReceipt, fetchReceipt, FetchedReceipt, ProviderUnavailableError, ReceiptNotFoundError } from './verification/fetcher';
 import { FLAG_INFO, FlagCode, matchReceipt, maxSeverity } from './verification/matching';
 import { ParsedReceipt } from './verification/parsed-receipt';
 import { decodeQr, ocrText } from './verification/qr';
 import { extractReference, ExtractedRef, findReferenceInText, receiptUrl } from './verification/reference';
 import { parseTelebirrHtml } from './verification/telebirr.parser';
 
-const ACCEPTED_MIME = ['image/jpeg', 'image/png'];
+/** Testing mode: see simulate(). */
+export const SIMULATION = process.env.DEPOSIT_SIMULATION === 'true';
+
 const startOfDay = () => {
   // Ethiopian calendar day boundaries (UTC+3).
   const d = new Date(Date.now() + 3 * 3600_000);
@@ -45,35 +47,48 @@ export class DepositsService {
 
   // ---------- §4.2 user side ----------
 
-  async submit(userId: string, dto: SubmitDepositDto, file?: Express.Multer.File) {
-    if (!file && !dto.reference) throw new BadRequestException('Upload the receipt or paste its link / reference');
+  async submit(userId: string, dto: SubmitDepositDto) {
+    const referenceInput = dto.reference.trim();
+    // Reject anything that isn't a Telebirr / CBE receipt link or reference straight away.
+    if (!extractReference(referenceInput, dto.provider)) {
+      throw new BadRequestException(
+        dto.provider === 'CBE'
+          ? 'That is not a CBE receipt link. Paste the link from Share in your CBE app (https://mbreciept.cbe.com.et/…) or the FT… reference.'
+          : 'That is not a Telebirr receipt link. Paste the link from Share in your Telebirr app (https://transactioninfo.ethiotelecom.et/receipt/…) or the 10-character transaction number.',
+      );
+    }
     // REQ-DEP-06: max 5 deposit submissions per user per hour.
     const lastHour = await this.prisma.deposit.count({ where: { userId, createdAt: { gte: new Date(Date.now() - 3600_000) } } });
     if (lastHour >= 5) throw new HttpException('Too many deposits this hour. Try again later.', HttpStatus.TOO_MANY_REQUESTS);
 
-    let imageKey: string | undefined;
-    if (file) {
-      // REQ-SEC-03: JPG/PNG only, ≤5 MB (multer limit), re-encoded, stored outside the web root.
-      if (!ACCEPTED_MIME.includes(file.mimetype)) throw new BadRequestException('Only JPG or PNG images are accepted');
-      let clean: Buffer;
-      try {
-        clean = await sharp(file.buffer, { limitInputPixels: 40_000_000 }).rotate().png().toBuffer();
-      } catch {
-        throw new BadRequestException('The image could not be read');
-      }
-      imageKey = await this.storage.put('receipts', clean, 'png');
-    }
+    const deposit = await this.prisma.deposit.create({
+      data: { userId, provider: dto.provider, claimedAmountCents: birrToCents(dto.amount), referenceInput },
+    });
+    await this.enqueue(deposit.id);
+    return this.forUser(deposit);
+  }
+
+  /**
+   * TEMPORARY (testing): with DEPOSIT_SIMULATION=true, players can credit any amount without a
+   * receipt. The deposit gets a fake receipt URL and a SIM-… reference so it is easy to spot
+   * (and exclude) later. The API refuses to start with this flag in production.
+   */
+  async simulate(userId: string, dto: SimulateDepositDto) {
+    if (!SIMULATION) throw new ForbiddenException('Payment simulation is turned off');
+    const reference = `SIM-${randomBytes(5).toString('hex').toUpperCase()}`;
+    const amountCents = birrToCents(dto.amount);
     const deposit = await this.prisma.deposit.create({
       data: {
         userId,
         provider: dto.provider,
-        claimedAmountCents: birrToCents(dto.amount),
-        referenceInput: dto.reference?.trim() || null,
-        imageKey,
+        claimedAmountCents: amountCents,
+        reference,
+        referenceInput: `https://simulated.spin-draw.test/receipt/${reference}`,
+        parsedJson: { simulated: true, reference, amountCents, date: new Date().toISOString(), status: 'Completed' },
       },
     });
-    await this.enqueue(deposit.id);
-    return this.forUser(deposit);
+    await this.credit(deposit.id, amountCents, null, 'SIMULATED payment (testing mode)');
+    return this.forUser(await this.prisma.deposit.findUniqueOrThrow({ where: { id: deposit.id } }));
   }
 
   async enqueue(depositId: string) {
@@ -113,6 +128,7 @@ export class DepositsService {
       minDepositCents: s.minDepositCents,
       maxDepositCents: s.maxDepositCents,
       dailyDepositLimitCents: s.dailyDepositLimitCents,
+      simulation: SIMULATION,
     };
   }
 
@@ -127,7 +143,8 @@ export class DepositsService {
     if (deposit.status !== 'VERIFYING') return;
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: deposit.userId } });
 
-    // Steps 1–2: reference from pasted text, QR code, then OCR.
+    // Steps 1–2: reference from the pasted link. (Older deposits may carry an uploaded image
+    // instead; re-running those still reads the QR code / OCR.)
     let ref: ExtractedRef | null = deposit.referenceInput ? extractReference(deposit.referenceInput, deposit.provider) : null;
     let image: Buffer | null = null;
     if (!ref && deposit.imageKey) {
@@ -149,7 +166,10 @@ export class DepositsService {
     deposit.reference = ref.reference;
 
     // Step 3: duplicates are rejected immediately, even when submitted by a different user.
-    if (await this.isDuplicate(deposit.id, ref.provider, ref.reference)) return this.flag(deposit, ['DUPLICATE'], 'REJECTED');
+    // (CBE short links only reveal the FT reference after fetching — checked below.)
+    if (!ref.cbeShortCode && (await this.isDuplicate(deposit.id, ref.provider, ref.reference))) {
+      return this.flag(deposit, ['DUPLICATE'], 'REJECTED');
+    }
 
     // Step 4: fetch and parse the official receipt (the source of truth — REQ-DEP-01).
     const settings = await this.settings.all();
@@ -170,6 +190,13 @@ export class DepositsService {
     if (ref.provider === 'TELEBIRR') {
       rawKey = await this.storage.put('raw-receipts', fetched.body, 'html');
       parsed = parseTelebirrHtml(fetched.body.toString('utf8'));
+    } else if (ref.cbeShortCode) {
+      rawKey = await this.storage.put('raw-receipts', fetched.body, 'json');
+      try {
+        parsed = parseCbeJson(JSON.parse(fetched.body.toString('utf8')) as CbeReceiptJson);
+      } catch {
+        parsed = null as unknown as ParsedReceipt;
+      }
     } else {
       rawKey = await this.storage.put('raw-receipts', fetched.body, 'pdf');
       parsed = (await parseCbePdf(fetched.body).catch(() => ({ parsed: null as unknown as ParsedReceipt }))).parsed;
@@ -184,6 +211,13 @@ export class DepositsService {
       return this.flag(deposit, ['PARSE_FAILED']);
     }
     this.parseFailures[ref.provider] = 0;
+    if (ref.cbeShortCode) {
+      if (!parsed.reference) return this.flag(deposit, ['PARSE_FAILED']);
+      ref.reference = parsed.reference;
+      await this.prisma.deposit.update({ where: { id: deposit.id }, data: { reference: ref.reference } });
+      deposit.reference = ref.reference;
+      if (await this.isDuplicate(deposit.id, ref.provider, ref.reference)) return this.flag(deposit, ['DUPLICATE'], 'REJECTED');
+    }
     if (parsed.reference && parsed.reference.toUpperCase() !== ref.reference) return this.flag(deposit, ['PARSE_FAILED']);
 
     // Step 5: §4.4 rules.
@@ -219,6 +253,7 @@ export class DepositsService {
   }
 
   private async fetchOfficial(ref: ExtractedRef, cbeAccounts: string[]): Promise<FetchedReceipt> {
+    if (ref.cbeShortCode) return fetchCbeShortReceipt(ref.cbeShortCode);
     if (ref.provider === 'TELEBIRR' || ref.cbeId) return fetchReceipt(receiptUrl(ref));
     // CBE needs FT ref + last 8 digits of the payer's OR receiver's account; we use our own.
     let lastErr: Error = new ReceiptNotFoundError('No CBE receiving account configured');
@@ -257,7 +292,10 @@ export class DepositsService {
     this.parseFailures[provider] += 1;
     if (this.parseFailures[provider] === 3) {
       this.log.error(`${provider} receipt parsing failed 3 times in a row — format may have changed`);
-      await this.notifications.alertAdmins('Receipt parser failing', `${provider} receipts failed to parse 3 times in a row. The receipt format may have changed.`);
+      await this.notifications.alertAdmins('Receipt parser failing', `${provider} receipts failed to parse 3 times in a row. The receipt format may have changed.`, {
+        href: '/admin/deposits',
+        dedupeKey: `parser:${provider}`,
+      });
     }
   }
 

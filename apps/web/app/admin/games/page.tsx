@@ -12,7 +12,7 @@ interface Template { id: string; name: string | null; stakeCents: number; capaci
 const templateFields = (t?: Template): ExtraField[] => [
   { name: 'name', label: 'Name', defaultValue: t?.name ?? '' },
   { name: 'stake', label: 'Stake (birr)', type: 'number', required: true, defaultValue: t ? String(t.stakeCents / 100) : '100' },
-  { name: 'capacity', label: 'Capacity (2–100 players)', type: 'number', required: true, defaultValue: String(t?.capacity ?? 10) },
+  { name: 'capacity', label: 'Number of players (2–100), e.g. 2, 3, 5, 10', type: 'number', required: true, defaultValue: String(t?.capacity ?? 10) },
   { name: 'minPlayers', label: 'Minimum players to draw at deadline', type: 'number', defaultValue: String(t?.minPlayers ?? 2) },
   { name: 'commissionPct', label: 'Commission %', type: 'number', defaultValue: t ? String(t.commissionBps / 100) : '20' },
   { name: 'deadlineMinutes', label: 'Deadline in minutes (empty = draw only when full)', type: 'number', defaultValue: t?.deadlineMinutes ? String(t.deadlineMinutes) : '' },
@@ -39,10 +39,10 @@ export default function Games() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Games</h1>
-        <ActionButton label="New room template" className="btn-primary btn-sm" path="/admin/games/templates" extra={templateFields()} transform={toTemplate} onDone={() => { templates.reload(); games.reload(); }} />
+        <ActionButton label="Create game type" className="btn-primary btn-sm" path="/admin/games/templates" extra={templateFields()} transform={toTemplate} onDone={() => { templates.reload(); games.reload(); }} />
       </div>
       <section>
-        <h2 className="mb-2 font-semibold">Room templates</h2>
+        <h2 className="mb-2 font-semibold">Game types (room templates)</h2>
         <p className="mb-2 text-sm text-slate-500">Each active template keeps one open room; a new one opens as soon as it fills or closes. Edits apply to rooms opened afterwards.</p>
         {!templates.data ? <Spinner /> : (
           <div className="overflow-x-auto">

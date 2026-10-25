@@ -38,7 +38,7 @@ function VerifyInner() {
       <form onSubmit={submit} className="card space-y-4">
         {error && <Alert>{error}</Alert>}
         <OtpInput value={code} onChange={setCode} phone={phone} purpose="REGISTER" />
-        <button className="btn-primary w-full" disabled={busy || code.length !== 6}>{t('auth.verify')}</button>
+        <button className="btn-primary w-full" disabled={busy || code.length < 4}>{t('auth.verify')}</button>
       </form>
     </main>
   );

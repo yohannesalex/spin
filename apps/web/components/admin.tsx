@@ -28,13 +28,19 @@ export function AdminShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!loading && !ok) router.replace('/admin/login');
   }, [loading, ok, router]);
+  // Unread alert count: refreshed on every page change, every 30 s, and right after the
+  // Alerts page marks everything read (it fires 'admin-alerts-read').
   useEffect(() => {
     if (!ok) return;
     const load = () => api<{ unread: number }>('/notifications').then((n) => setAlerts(n.unread)).catch(() => {});
     load();
     const id = setInterval(load, 30000);
-    return () => clearInterval(id);
-  }, [ok]);
+    window.addEventListener('admin-alerts-read', load);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener('admin-alerts-read', load);
+    };
+  }, [ok, pathname]);
 
   if (loading || !ok) return <Spinner />;
   return (
@@ -58,7 +64,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="hidden space-y-2 px-4 py-4 text-xs text-slate-500 lg:block">
-          <Link href="/admin/alerts" className="block text-slate-700">🔔 Alerts {alerts > 0 && <span className="badge bg-red-600 text-white">{alerts}</span>}</Link>
+          <Link href="/admin/alerts" className={`block rounded-lg px-2 py-1 ${pathname === '/admin/alerts' ? 'bg-gold-100 text-gold-800' : 'text-slate-700'}`}>🔔 Alerts {alerts > 0 && <span className="badge bg-red-600 text-white">{alerts}</span>}</Link>
           <div>{user.fullName}</div>
           <button className="text-red-600" onClick={async () => { await logout(); router.push('/admin/login'); }}>Log out</button>
         </div>

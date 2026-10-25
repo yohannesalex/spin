@@ -57,3 +57,32 @@ export async function parseCbePdf(pdf: Buffer): Promise<{ text: string; parsed: 
   const { text } = await pdfParse(pdf);
   return { text, parsed: parseCbeText(text) };
 }
+
+/** Shape of the JSON behind a CBE short receipt link (only the fields we use). */
+export interface CbeReceiptJson {
+  id?: string; // FT reference
+  status?: string; // "COMPLETED"
+  debitAccountHolder?: string; // payer
+  debitAccountNo?: string; // masked, e.g. 1********9336
+  creditAccountHolder?: string; // receiver
+  creditAccountNo?: string;
+  amountCredited?: string; // what the receiver got, without the payer's fees
+  debitAmount?: string;
+  dateTimes?: string[]; // ISO, e.g. "2026-10-18T12:54:00Z"
+}
+
+export function parseCbeJson(j: CbeReceiptJson): ParsedReceipt {
+  const when = j.dateTimes?.[0];
+  const date = when && !Number.isNaN(Date.parse(when)) ? new Date(when).toISOString() : null;
+  return {
+    reference: j.id ? j.id.toUpperCase() : null,
+    payerName: clean(j.debitAccountHolder),
+    payerAccount: clean(j.debitAccountNo),
+    receiverName: clean(j.creditAccountHolder),
+    receiverAccount: clean(j.creditAccountNo),
+    // The platform must have received the claimed amount, so use the credited amount.
+    amountCents: parseAmountCents(j.amountCredited ?? j.debitAmount),
+    date,
+    status: clean(j.status),
+  };
+}

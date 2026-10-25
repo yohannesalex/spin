@@ -6,9 +6,17 @@ export interface ExtractedRef {
   reference: string;
   /** CBE only: full receipt id (FT ref + last 8 digits of an account) when the QR/link carried it. */
   cbeId?: string;
+  /**
+   * CBE only: code from a short receipt link (mbreciept.cbe.com.et/<code>). The FT reference is
+   * only known after fetching, and each share of a receipt gets a different code, so duplicates
+   * are checked on the FT reference afterwards.
+   */
+  cbeShortCode?: string;
 }
 
 const TELEBIRR_URL = /transactioninfo\.ethiotelecom\.et\/receipt\/([A-Z0-9]{10})\b/i;
+// CBE's own domain really is spelled "mbreciept"; accept the correct spelling too.
+const CBE_SHORT_URL = /mbrec(?:ie|ei)pt\.cbe\.com\.et\/([A-Za-z0-9_-]{6,})/i;
 const CBE_URL = /apps\.cbe\.com\.et(?::\d+)?\/?\?id=(FT[A-Z0-9]{10})(\d{8})?/i;
 const CBE_REF = /\b(FT[A-Z0-9]{10})(\d{8})?\b/i;
 const TELEBIRR_REF = /^[A-Z0-9]{10}$/i;
@@ -22,6 +30,9 @@ export function extractReference(text: string, hint?: Provider): ExtractedRef | 
   if (!s) return null;
   let m = TELEBIRR_URL.exec(s);
   if (m) return { provider: 'TELEBIRR', reference: m[1].toUpperCase() };
+  m = CBE_SHORT_URL.exec(s);
+  // The code is case-sensitive: keep it as-is.
+  if (m) return { provider: 'CBE', reference: m[1], cbeShortCode: m[1] };
   m = CBE_URL.exec(s);
   if (m) return { provider: 'CBE', reference: m[1].toUpperCase(), cbeId: m[2] ? `${m[1]}${m[2]}`.toUpperCase() : undefined };
   m = CBE_REF.exec(s);
