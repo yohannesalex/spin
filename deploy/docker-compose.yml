@@ -1,0 +1,85 @@
+# Production stack for one server (e.g. Oracle Cloud Always Free). See DEPLOY-ORACLE.md.
+#   cd deploy && docker compose up -d --build
+# Settings come from deploy/.env (copy deploy/.env.example).
+name: spin-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: spin
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spin -d spin"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # Append-only file: queued deposit checks survive a restart.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://spin:${POSTGRES_PASSWORD}@postgres:5432/spin?schema=public
+      REDIS_URL: redis://redis:6379
+      WEB_ORIGIN: https://${DOMAIN:?Set DOMAIN in deploy/.env}
+      COOKIE_SECURE: "true"
+      TRUST_PROXY: "1" # only Caddy sits in front of the API
+      STORAGE_DIR: /data/storage
+      PORT: "4000"
+    volumes:
+      - apistorage:/data
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - web
+
+volumes:
+  pgdata:
+  redisdata:
+  apistorage:
+  caddy_data:
+  caddy_config:

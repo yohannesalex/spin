@@ -6,3 +6,5 @@ dist
 apps/api/storage
 coverage
 *.log
+deploy/backups
+deploy/backups.log

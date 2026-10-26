@@ -1,0 +1,15 @@
+# Caddy: HTTPS (automatic Let's Encrypt certificate for $DOMAIN) and routing.
+# Everything is served from one domain, so cookies, CSRF checks and the socket are same-origin.
+{$DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+	handle /socket.io/* {
+		reverse_proxy api:4000
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}

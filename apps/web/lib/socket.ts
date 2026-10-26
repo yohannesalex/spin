@@ -7,7 +7,8 @@ let clockOffset = 0;
 
 export function getSocket(): Socket {
   if (!socket) {
-    socket = io(process.env.NEXT_PUBLIC_WS_URL || 'http://localhost:4000', { transports: ['websocket', 'polling'], withCredentials: true });
+    // Defaults to the site's own origin (production: Caddy routes /socket.io to the API).
+    socket = io(process.env.NEXT_PUBLIC_WS_URL || window.location.origin, { transports: ['websocket', 'polling'], withCredentials: true });
     socket.on('connect', syncClock);
   }
   return socket;

@@ -20,7 +20,10 @@ async function bootstrap() {
     new Logger('Bootstrap').warn('DEPOSIT_SIMULATION is on: players can credit fake payments with "Simulate payment"');
   }
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.set('trust proxy', 1); // behind Cloudflare / Next.js proxy
+  // Number of proxies in front of the API: 1 = one load balancer (e.g. Railway alone),
+  // 2 = browser → Vercel rewrite → Railway → API. Wrong values make every user share one IP
+  // for rate limits, so set TRUST_PROXY to match the deployment.
+  app.set('trust proxy', Number(process.env.TRUST_PROXY ?? 1));
   app.setGlobalPrefix('api');
   // REQ-SEC-01: HSTS and other security headers.
   app.use(helmet({ hsts: { maxAge: 31536000, includeSubDomains: true } }));

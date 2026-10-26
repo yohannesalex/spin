@@ -1,0 +1,15 @@
+# Keep images small and free of local secrets / build output.
+**/node_modules
+**/.next
+**/dist
+**/coverage
+**/*.log
+**/*.tsbuildinfo
+.git
+apps/api/storage
+deploy/backups
+# Local env files must never be baked into an image (apps/web/.env.local would
+# hard-code localhost URLs into the web build). Production config comes from deploy/.env.
+**/.env
+**/.env.*
+!**/.env.example
